@@ -1,1 +1,1 @@
-# networks
+# Networks class assignments
