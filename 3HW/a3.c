@@ -21,17 +21,20 @@
 #define REQSIZE 22 // (TYPEWINDOWSEQSIZE * 2) + FILENAMESIZE
 #define DATAPKTSIZE 514 // (TYPEWINDOWSEQSIZE * 2) + DATASIZE
 #define MAX_TIMEOUTS 5
+#define TIMEOUT_USEC 3000
 
 typedef struct __attribute__((__packed__)) {
-    // TODO: char treated as int works?
-    char type[TYPEWINDOWSEQSIZE];
-    char window_size[TYPEWINDOWSEQSIZE];
+    // TODO: 
+    // Q: does char need the byte size?
+    // Q: cast from pointer to int of diff size warning
+    char type;
+    char window_size;
     char filename[FILENAMESIZE];
 } Request;
 
 typedef struct __attribute__((__packed__)) {
-    char type[TYPEWINDOWSEQSIZE];
-    char seq_num[TYPEWINDOWSEQSIZE];
+    char type;
+    char seq_num;
     char data[DATASIZE];
 } DataPkt;
 
@@ -56,7 +59,7 @@ void error(char *msg) {
  * Returns file size
  */
 int open_file(FILE *fp, char* filename) {
-  fp = fopen(filename, 'r');
+  fp = fopen(filename, "r");
   fseek(fp, 0, SEEK_END);
   int file_size = ftell(fp);
   fseek(fp, 0, SEEK_SET);
@@ -76,11 +79,11 @@ int send_pkts(FILE *fp, int last_sent, int window_max, int sockfd, int* clientle
     pkt.type = DATA;
     pkt.seq_num = ++last_sent;
     fread(pkt.data, 1, DATASIZE, fp);
-    // TODO: Q: does sizeof need to specify that the data is less than 512 bytes for the final send
-    //           or can we just always send the size of the struct and the client will look at the data field themselves 
+    // TODO: sizeof needs to specify that the data is less than 512 bytes for the final send
     // TODO: original code says clientlen isn't a pointer for sendto
+    printf("sending pkt=> type: %d seq_num: %d\n", pkt.type, pkt.seq_num);
     n = sendto(sockfd, (char *) &pkt, sizeof (DataPkt), 0, 
-               (struct sockaddr *) clientaddr, clientlen);
+               (struct sockaddr *) clientaddr, *clientlen);
     if (n < 0) 
       error("ERROR in sendto");
   }
@@ -95,7 +98,7 @@ void send_err(int sockfd, int* clientlen, struct sockaddr_in* clientaddr) {
   pkt.type = ERROR;
   // TODO: original code says clientlen isn't a pointer for sendto
   n = sendto(sockfd, (char *) &pkt, sizeof (DataPkt), 0, 
-             (struct sockaddr *) clientaddr, clientlen);
+             (struct sockaddr *) clientaddr, *clientlen);
   if (n < 0)
     error("ERROR in sendto");
 }
@@ -104,41 +107,51 @@ int send_file(int sockfd, int* clientlen, struct sockaddr_in* clientaddr, Reques
   // int last_ack = -1;
   int last_sent = -1;
   FILE *fp;
-  int final_seq_num = (open_file(fp, req->filename) / DATASIZE) // this accounts for 0 byte DataPkt for file_size % 512 == 0
+  int final_seq_num = (open_file(fp, req->filename) / DATASIZE); // this accounts for 0 byte DataPkt for file_size % 512 == 0
   int window_min = 0;
   // window_max can't be greater than final_seq_num
-  int window_max = (( (int) req->window_size ) - 1 > final_seq_num) ? final_seq_num : ( (int) req->window_size ) - 1;
+  int window_max = (req->window_size - 1 > final_seq_num) ? final_seq_num : (req->window_size - 1);
   int num_timeouts = 0;
   int n;
+  fd_set read_set;
+  struct timeval timeout;
+  timeout.tv_usec = TIMEOUT_USEC;
+  
   last_sent = send_pkts(fp, last_sent, window_max, sockfd, clientlen, clientaddr);
 
   while (1) {
     DataPkt *ack = malloc(sizeof (DataPkt));
-    // TODO: add this after everything else is working bzero(buf, BUFSIZE);
     // TODO: verify clientaddr and clientlen dont need &
-    // TODO: change from recvfrom to select to allow for timeout check
-    n = recvfrom(sockfd, (char *) ack, (TYPEWINDOWSEQSIZE * 2), 0,
-         (struct sockaddr *) clientaddr, clientlen);
+    // n = recvfrom(sockfd, (char *) ack, (TYPEWINDOWSEQSIZE * 2), 0,
+    //      (struct sockaddr *) clientaddr, clientlen);
+    // TODO: add this after everything else is working bzero(buf, BUFSIZE);
+    FD_ZERO(&read_set);
+    FD_SET(sockfd, &read_set);
+    n = select(sockfd + 1, &read_set, NULL, NULL, &timeout);
     if (n < 0)
       error("ERROR in recvfrom");
 
     if (n == 0) { // timed out
+      printf("timed out\n");
       num_timeouts++;
 
       if (num_timeouts == MAX_TIMEOUTS) {
-        return -1 // stop communication
+        return -1; // stop communication
       }
       last_sent = send_pkts(fp, last_sent, window_max, sockfd, clientlen, clientaddr);
     }
 
     if (ack->seq_num >= window_min) { // ACK is new
+      printf("received ack of %d\n", ack->seq_num);
       if (ack->seq_num == final_seq_num) {
-        return 0 // completed
+        printf("final ack received!\n");
+        return 0; // completed
       }
 
       // adjust window accordingly
       window_min = ack->seq_num + 1;
-      window_max = (window_min + (req->window_size - 1) > final_seq_num) ? final_seq_num : window_min + (req->window_size - 1);
+      window_max = (window_min + (req->window_size - 1) > final_seq_num) ? final_seq_num : (window_min + (req->window_size - 1));
+      printf("new window: [%d : %d]\n", window_min, window_max);
       last_sent = send_pkts(fp, last_sent, window_max, sockfd, clientlen, clientaddr);
     }
   }
@@ -210,8 +223,10 @@ int main(int argc, char **argv) {
       error("ERROR in recvfrom");
 
     // TODO: (cleanup) can remove if and else since all first requests should be RRQ
-    if (req->type == RRQ) { 
+    if (req->type == RRQ) {
+        printf("recieved request for file %s\n", req->filename);
         if (access(req->filename, F_OK) == -1){
+          printf("404 sending ERROR\n");
           send_err(sockfd, &clientlen, &clientaddr);
           free(req);
           continue;
