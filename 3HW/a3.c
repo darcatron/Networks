@@ -136,7 +136,7 @@ void send_file(int sockfd, int* clientlen, struct sockaddr_in* clientaddr, Reque
       num_timeouts++;
 
       if (num_timeouts == MAX_TIMEOUTS) {
-        return -1; // stop communication
+        return; // stop communication
       }
       last_sent = send_pkts(fp, window_min - 1, window_max, sockfd, clientlen, clientaddr);
     }
@@ -147,7 +147,7 @@ void send_file(int sockfd, int* clientlen, struct sockaddr_in* clientaddr, Reque
         error("ERROR in recvfrom");
       if (ack.seq_num >= window_min) { // ACK is new
         if (ack.seq_num == final_seq_num) {
-          return 0; // completed
+          return; // completed
         }
 
         // adjust window accordingly
