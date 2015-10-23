@@ -24,9 +24,6 @@
 #define TIMEOUT_USEC 3000
 
 typedef struct __attribute__((__packed__)) {
-    // TODO: 
-    // Q: does char need the byte size?
-    // Q: cast from pointer to int of diff size warning
     char type;
     char window_size;
     char filename[FILENAMESIZE];
@@ -55,15 +52,23 @@ void error(char *msg) {
 }
 
 /*
- * Opens file and sets up pointer
+ * Opens file and returns file pointer
+ */
+FILE* open_file(char* filename) {
+  FILE *fp;
+  fp = fopen(filename, "r");
+
+  return fp;
+}
+
+/*
  * Returns file size
  */
-int open_file(FILE *fp, char* filename) {
-  fp = fopen(filename, "r");
+int get_filesize(FILE *fp) {
   fseek(fp, 0, SEEK_END);
   int file_size = ftell(fp);
   fseek(fp, 0, SEEK_SET);
-
+  
   return file_size;
 }
 
@@ -72,22 +77,24 @@ int open_file(FILE *fp, char* filename) {
  * Returns last sent packet
  */
 int send_pkts(FILE *fp, int last_sent, int window_max, int sockfd, int* clientlen, struct sockaddr_in* clientaddr) {
+  int final_seq_num = (get_filesize(fp) / DATASIZE); // this accounts for 0 byte DataPkt for file_size % 512 == 0
+  int final_pkt_size = (get_filesize(fp) % DATASIZE);
+
   while (last_sent != window_max) {
     int n;
     DataPkt pkt;
 
     pkt.type = DATA;
     pkt.seq_num = ++last_sent;
-    fread(pkt.data, 1, DATASIZE, fp);
-    // TODO: sizeof needs to specify that the data is less than 512 bytes for the final send
-    // TODO: original code says clientlen isn't a pointer for sendto
-    printf("sending pkt=> type: %d seq_num: %d\n", pkt.type, pkt.seq_num);
-    n = sendto(sockfd, (char *) &pkt, sizeof (DataPkt), 0, 
+    bzero(pkt.data, DATASIZE);
+    int read_size = (pkt.seq_num == final_seq_num) ? final_pkt_size : DATASIZE;
+    int r = fread(pkt.data, 1, read_size, fp);
+    int send_size = (pkt.seq_num == final_seq_num) ? ((TYPEWINDOWSEQSIZE * 2) + final_pkt_size) : sizeof(DataPkt);
+    n = sendto(sockfd, (char *) &pkt, send_size, 0, 
                (struct sockaddr *) clientaddr, *clientlen);
     if (n < 0) 
       error("ERROR in sendto");
   }
-
   return last_sent;
 }
 
@@ -96,18 +103,16 @@ void send_err(int sockfd, int* clientlen, struct sockaddr_in* clientaddr) {
   DataPkt pkt;
 
   pkt.type = ERROR;
-  // TODO: original code says clientlen isn't a pointer for sendto
   n = sendto(sockfd, (char *) &pkt, sizeof (DataPkt), 0, 
              (struct sockaddr *) clientaddr, *clientlen);
   if (n < 0)
     error("ERROR in sendto");
 }
 
-int send_file(int sockfd, int* clientlen, struct sockaddr_in* clientaddr, Request* req) {  
-  // int last_ack = -1;
+void send_file(int sockfd, int* clientlen, struct sockaddr_in* clientaddr, Request* req) {
   int last_sent = -1;
-  FILE *fp;
-  int final_seq_num = (open_file(fp, req->filename) / DATASIZE); // this accounts for 0 byte DataPkt for file_size % 512 == 0
+  FILE *fp = open_file(req->filename);
+  int final_seq_num = (get_filesize(fp) / DATASIZE); // this accounts for 0 byte DataPkt for file_size % 512 == 0
   int window_min = 0;
   // window_max can't be greater than final_seq_num
   int window_max = (req->window_size - 1 > final_seq_num) ? final_seq_num : (req->window_size - 1);
@@ -115,44 +120,41 @@ int send_file(int sockfd, int* clientlen, struct sockaddr_in* clientaddr, Reques
   int n;
   fd_set read_set;
   struct timeval timeout;
-  timeout.tv_usec = TIMEOUT_USEC;
   
   last_sent = send_pkts(fp, last_sent, window_max, sockfd, clientlen, clientaddr);
 
   while (1) {
-    DataPkt *ack = malloc(sizeof (DataPkt));
-    // TODO: verify clientaddr and clientlen dont need &
-    // n = recvfrom(sockfd, (char *) ack, (TYPEWINDOWSEQSIZE * 2), 0,
-    //      (struct sockaddr *) clientaddr, clientlen);
-    // TODO: add this after everything else is working bzero(buf, BUFSIZE);
+    DataPkt ack;
+    bzero(ack.data, DATASIZE);
     FD_ZERO(&read_set);
+    timeout.tv_sec = 0;
+    timeout.tv_usec = TIMEOUT_USEC;
     FD_SET(sockfd, &read_set);
     n = select(sockfd + 1, &read_set, NULL, NULL, &timeout);
-    if (n < 0)
-      error("ERROR in recvfrom");
 
     if (n == 0) { // timed out
-      printf("timed out\n");
       num_timeouts++;
 
       if (num_timeouts == MAX_TIMEOUTS) {
         return -1; // stop communication
       }
-      last_sent = send_pkts(fp, last_sent, window_max, sockfd, clientlen, clientaddr);
+      last_sent = send_pkts(fp, window_min - 1, window_max, sockfd, clientlen, clientaddr);
     }
+    else {
+      n = recvfrom(sockfd, (char *) &ack, (TYPEWINDOWSEQSIZE * 2), 0,
+         (struct sockaddr *) clientaddr, clientlen);
+      if (n < 0)
+        error("ERROR in recvfrom");
+      if (ack.seq_num >= window_min) { // ACK is new
+        if (ack.seq_num == final_seq_num) {
+          return 0; // completed
+        }
 
-    if (ack->seq_num >= window_min) { // ACK is new
-      printf("received ack of %d\n", ack->seq_num);
-      if (ack->seq_num == final_seq_num) {
-        printf("final ack received!\n");
-        return 0; // completed
+        // adjust window accordingly
+        window_min = ack.seq_num + 1;
+        window_max = (window_min + (req->window_size - 1) > final_seq_num) ? final_seq_num : (window_min + (req->window_size - 1));
+        last_sent = send_pkts(fp, last_sent, window_max, sockfd, clientlen, clientaddr);
       }
-
-      // adjust window accordingly
-      window_min = ack->seq_num + 1;
-      window_max = (window_min + (req->window_size - 1) > final_seq_num) ? final_seq_num : (window_min + (req->window_size - 1));
-      printf("new window: [%d : %d]\n", window_min, window_max);
-      last_sent = send_pkts(fp, last_sent, window_max, sockfd, clientlen, clientaddr);
     }
   }
 }
@@ -216,70 +218,20 @@ int main(int argc, char **argv) {
   while (1) {
     // recvfrom: receive a UDP datagram from a client
     Request *req = malloc(sizeof (Request));
-    // TODO: add this after everything else is working bzero(buf, BUFSIZE);
+    bzero(req->filename, FILENAMESIZE);
     n = recvfrom(sockfd, (char *) req, REQSIZE, 0,
          (struct sockaddr *) &clientaddr, &clientlen);
     if (n < 0)
       error("ERROR in recvfrom");
 
-    // TODO: (cleanup) can remove if and else since all first requests should be RRQ
-    if (req->type == RRQ) {
-        printf("recieved request for file %s\n", req->filename);
-        if (access(req->filename, F_OK) == -1){
-          printf("404 sending ERROR\n");
-          send_err(sockfd, &clientlen, &clientaddr);
-          free(req);
-          continue;
-        }
-    } 
-    else {
-      fprintf(stderr, "ERR!! Type is not RRQ!!\n");
-      exit(1);
+    if (access(req->filename, F_OK) == -1){
+      send_err(sockfd, &clientlen, &clientaddr);
+      free(req);
+      continue;
     }
 
     int completed = 0, too_many_timeouts = -1;
-    // TODO: (cleanup) can remove outcome since there is nothing I need to output for it
-    //                 send_file can be void return type
-    //                 ifs below can be removed
-    int outcome = send_file(sockfd, &clientlen, &clientaddr, req); 
-    
-    if (outcome == completed) {
-      // completed file transfer
-      fprintf(stderr, "FILE TRANSFER COMPLETE!\n");
-    }
-    else if (outcome == too_many_timeouts) {
-      // stop communication, assumes the client will not send anything more to us
-      fprintf(stderr, "TOO MANY TIMEOUTS!\n");
-    }
-    else {
-      fprintf(stderr, "ERR!! Outcome is not 0, 1, nor -1!\n");
-      exit(1);
-    }
-
+    send_file(sockfd, &clientlen, &clientaddr, req); 
     free(req);
-
-    /* ORIGINAL CODE BELOW */    
-
-    // /* 
-    //  * gethostbyaddr: determine who sent the datagram
-    //  */
-    // hostp = gethostbyaddr((const char *)&clientaddr.sin_addr.s_addr, 
-    //           sizeof(clientaddr.sin_addr.s_addr), AF_INET);
-    // if (hostp == NULL)
-    //   error("ERROR on gethostbyaddr");
-    // hostaddrp = inet_ntoa(clientaddr.sin_addr);
-    // if (hostaddrp == NULL)
-    //   error("ERROR on inet_ntoa\n");
-    // printf("server received datagram from %s (%s)\n", 
-    //    hostp->h_name, hostaddrp);
-    // printf("server received %d/%d bytes: %s\n", strlen(buf), n, buf);
-    
-    // /* 
-    //  * sendto: echo the input back to the client 
-    //  */
-    // n = sendto(sockfd, buf, strlen(buf), 0, 
-    //        (struct sockaddr *) &clientaddr, clientlen);
-    // if (n < 0) 
-    //   error("ERROR in sendto");
   }
 }
