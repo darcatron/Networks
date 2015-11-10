@@ -6,7 +6,20 @@
    ☐ chips for each player
    ☐ player hands
 
- Matush:
+P2P Protocol:
+  ☐ 1) new players talk to server and join a table (only one table at first)
+  ☐ 2) players use P2P type communication to play game
+    ☐ 2a) game state within each player with one player being the dealer and actually utilizing the dealer info
+    ☐ 2b) dealer shift if player d/cs
+    ☐ 2c) communication to server of new information every turn in case all players d/c
 
 
- Sean:
+ Necessary Info:
+   what happens if everyone disconnects and
+     no one comes back
+     1 person comes back
+     a few people come back
+     everyone comes back
+
+   will need to store player info on disk or at least have a way to mimick a "server failure"
+  

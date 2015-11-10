@@ -92,8 +92,8 @@ int main(int argc, char *argv[])
     // sprintf(req.type, "%d", RRQ);
     req.type = RRQ;
     // sprintf(req.window_size, "%d", 2);
-    req.window_size = 2;
-    strcpy(req.filename, "test1024.txt");
+    req.window_size = 6;
+    strcpy(req.filename, "test5120");
     printf("req created => type: %d window_size: %d filename: %s\n", req.type, req.window_size, req.filename);
 
     /* send the message to the server */
@@ -106,26 +106,46 @@ int main(int argc, char *argv[])
 
     // bzero(buffer,256);
     DataPkt pkt1;
+    DataPkt pkt2;
+
     n = recvfrom(sockfd, (char *) &pkt1, 514, 0, (struct sockaddr *) &serveraddr, &serverlen);
     if (n < 0) 
       error("ERROR in recvfrom");
     printf("recieved pkt1 type: %d seq: %d data_size: %d\n", pkt1.type, pkt1.seq_num, strlen(pkt1.data));
 
-
-    DataPkt pkt2;
     n = recvfrom(sockfd, (char *) &pkt2, 514, 0, (struct sockaddr *) &serveraddr, &serverlen);
     if (n < 0) 
       error("ERROR in recvfrom");
     printf("recieved pkt2 type: %d seq: %d data_size: %d\n", pkt2.type, pkt2.seq_num, strlen(pkt2.data));
 
-    DataPkt res1;
-    res1.type = ACK;
-    res1.seq_num = pkt1.seq_num;
-    n = sendto(sockfd, (char *) &res1, sizeof (DataPkt), 0,
-               (struct sockaddr *) &serveraddr, serverlen);
+    n = recvfrom(sockfd, (char *) &pkt1, 514, 0, (struct sockaddr *) &serveraddr, &serverlen);
     if (n < 0) 
-      error("ERROR in sendto");
-    printf("ack %d sent!\n", res1.seq_num);
+      error("ERROR in recvfrom");
+    printf("recieved pkt1 type: %d seq: %d data_size: %d\n", pkt1.type, pkt1.seq_num, strlen(pkt1.data));
+
+    n = recvfrom(sockfd, (char *) &pkt2, 514, 0, (struct sockaddr *) &serveraddr, &serverlen);
+    if (n < 0) 
+      error("ERROR in recvfrom");
+    printf("recieved pkt2 type: %d seq: %d data_size: %d\n", pkt2.type, pkt2.seq_num, strlen(pkt2.data));
+
+    n = recvfrom(sockfd, (char *) &pkt1, 514, 0, (struct sockaddr *) &serveraddr, &serverlen);
+    if (n < 0) 
+      error("ERROR in recvfrom");
+    printf("recieved pkt1 type: %d seq: %d data_size: %d\n", pkt1.type, pkt1.seq_num, strlen(pkt1.data));
+    
+    n = recvfrom(sockfd, (char *) &pkt2, 514, 0, (struct sockaddr *) &serveraddr, &serverlen);
+    if (n < 0) 
+      error("ERROR in recvfrom");
+    printf("recieved pkt2 type: %d seq: %d data_size: %d\n", pkt2.type, pkt2.seq_num, strlen(pkt2.data));
+
+    // DataPkt res1;
+    // res1.type = ACK;
+    // res1.seq_num = pkt1.seq_num;
+    // n = sendto(sockfd, (char *) &res1, sizeof (DataPkt), 0,
+    //            (struct sockaddr *) &serveraddr, serverlen);
+    // if (n < 0) 
+    //   error("ERROR in sendto");
+    // printf("ack %d sent!\n", res1.seq_num);
 
     // n = recvfrom(sockfd, (char *) &pkt2, 514, 0, (struct sockaddr *) &serveraddr, &serverlen);
     // if (n < 0) 
@@ -140,7 +160,7 @@ int main(int argc, char *argv[])
 
     DataPkt res2;
     res2.type = ACK;
-    res2.seq_num = pkt2.seq_num;
+    res2.seq_num = 5;
     n = sendto(sockfd, (char *) &res2, sizeof (DataPkt), 0,
                (struct sockaddr *) &serveraddr, serverlen);
     if (n < 0) 
@@ -148,6 +168,22 @@ int main(int argc, char *argv[])
     printf("ack %d sent!\n", res2.seq_num);
 
 
+    n = recvfrom(sockfd, (char *) &pkt1, 514, 0, (struct sockaddr *) &serveraddr, &serverlen);
+    if (n < 0) 
+      error("ERROR in recvfrom");
+    printf("recieved pkt1 type: %d seq: %d data_size: %d\n", pkt1.type, pkt1.seq_num, strlen(pkt1.data));
+    n = recvfrom(sockfd, (char *) &pkt2, 514, 0, (struct sockaddr *) &serveraddr, &serverlen);
+    if (n < 0) 
+      error("ERROR in recvfrom");
+    printf("recieved pkt2 type: %d seq: %d data_size: %d\n", pkt2.type, pkt2.seq_num, strlen(pkt2.data));
+    n = recvfrom(sockfd, (char *) &pkt1, 514, 0, (struct sockaddr *) &serveraddr, &serverlen);
+    if (n < 0) 
+      error("ERROR in recvfrom");
+    printf("recieved pkt1 type: %d seq: %d data_size: %d\n", pkt1.type, pkt1.seq_num, strlen(pkt1.data));
+    n = recvfrom(sockfd, (char *) &pkt1, 514, 0, (struct sockaddr *) &serveraddr, &serverlen);
+    if (n < 0) 
+      error("ERROR in recvfrom");
+    printf("recieved pkt1 type: %d seq: %d data_size: %d\n", pkt1.type, pkt1.seq_num, strlen(pkt1.data));
 
     DataPkt pkt3;
     bzero(pkt3.data, DATASIZE);
@@ -162,21 +198,6 @@ int main(int argc, char *argv[])
     //   error("ERROR in recvfrom");
     // printf("recieved timeout pkt3 type: %d seq: %d data_size: %d\n", pkt3.type, pkt3.seq_num, strlen(pkt3.data));
 
-    n = recvfrom(sockfd, (char *) &pkt3, 514, 0, (struct sockaddr *) &serveraddr, &serverlen);
-    if (n < 0) 
-      error("ERROR in recvfrom");
-    printf("recieved before timeout pkt3 type: %d seq: %d data_size: %d\n", pkt3.type, pkt3.seq_num, strlen(pkt3.data));
-
-    n = recvfrom(sockfd, (char *) &pkt3, 514, 0, (struct sockaddr *) &serveraddr, &serverlen);
-    if (n < 0) 
-      error("ERROR in recvfrom");
-    printf("recieved before timeout pkt3 type: %d seq: %d data_size: %d\n", pkt3.type, pkt3.seq_num, strlen(pkt3.data));
-
-    n = recvfrom(sockfd, (char *) &pkt3, 514, 0, (struct sockaddr *) &serveraddr, &serverlen);
-    if (n < 0) 
-      error("ERROR in recvfrom");
-    printf("recieved before timeout pkt3 type: %d seq: %d data_size: %d\n", pkt3.type, pkt3.seq_num, strlen(pkt3.data));
-    
     DataPkt res3;
     res3.type = ACK;
     res3.seq_num = pkt3.seq_num;
