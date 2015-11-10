@@ -40,7 +40,7 @@ class Player(object):
         # TODO: peer is connected to another peer that is the "server"
         # get_gamestate from "server"
         # send "server" move
-        # TODO: look into struct library to pack and send data
+        # TODO: look into pickle library to serialize and send data
         pass
     def start_server(self):
         # TODO: peer is Dealer
@@ -50,10 +50,10 @@ class Player(object):
         pass
     def get_gamestate(self):
         # TODO: parse gamestate data and update self
-        # TODO: look into struct library to unpack data
+        # TODO: look into pickle library to unserialize data
         pass
     def send_gamestate(self):
         # TODO: if player is server
         # send gamestate to each player
-        # TODO: look into struct library to pack and send data
+        # TODO: look into pickle library to serialize and send data
         pass
