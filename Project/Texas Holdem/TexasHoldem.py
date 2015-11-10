@@ -4,6 +4,22 @@ from deuces import Card
 from deuces import Deck
 from deuces import Evaluator
 
+class Dealer(object):
+    """
+    Dealer for Texas Hold'em game
+    """
+    large_blind_amount = 2
+    small_blind_amount = 1
+
+    def __init__(self):
+        self.players = []
+        self.total_pot = 0
+        self.river = None
+    # TODO: continue this
+
+
+
+
 numPlayers = 3
 
 LARGE_BLIND_AMOUNT = 2
