@@ -64,7 +64,9 @@ class Server(object):
         # TODO: look into struct library to pack and send data
         pass
     def cash_out(self, client):
-        # TODO: do something else related to cash
+        # TODO: print the value they earned and remove their user information
         client.close() # Close the connection
+    def buy_chips(self, amount):
+        pass
 
 
