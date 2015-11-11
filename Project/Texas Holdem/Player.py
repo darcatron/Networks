@@ -8,7 +8,7 @@ class Player(object):
     def __init__(self, username):
         self.username = username
         self.hand = None
-        self.chips = self.starting_chips
+        self.chips = Player.starting_chips
         self.made_move_this_turn = False
         self.has_folded = False
     def bet(self, amount): # TODO: NEED TO ADD ERROR CONDITIONS AND ALL IN SPLIT POT

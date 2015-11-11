@@ -22,4 +22,6 @@ P2P Protocol:
      everyone comes back
 
    will need to store player info on disk or at least have a way to mimick a "server failure"
+
+   Maybe have some sort of user authentication with ip address or password?
   
