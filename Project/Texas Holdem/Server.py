@@ -33,21 +33,31 @@ class Server(object):
                 else:
                     pass 
                     # TODO:
-                    # recv dict and pickle.loads it 
-                    # get request type and username
-                    # handle request
+                    # if client has data_len to be recieved
+                    #   while data_recieved < data_len
+                    #       recv dict
+                    #   pickle.loads it 
+                    #   get request type and username
+                    #   handle request
+                    #   reset data_len of client
+                    # else
+                    #   recv until deliminator to get data_len client wants to send
+                    #   store it
+                    #   send ok to client
     def send_table(self, client):
         # TODO: 
         # get_open_table(username)
         # put in dict -> pickle dumps
         # send table info
+        # (get verification)
         client.close() # Close the connection
-    def create_new_table(self):
+    def create_new_table(self, ip_address, port):
         pass
     def create_new_user(self, username):
         new_user = {"username" : username,
                     "num_chips" : 150,
-                    "last_table" : -1}
+                    "last_table" : -1,
+                    "data_to_receive" : 0}
 
         self.users.append(new_user)
     def get_open_table(self, username):
@@ -58,8 +68,10 @@ class Server(object):
         #   user is first player
         #   user will be the "server"
         #   send user a port they should start the "server" on and keep track of it
+        #   (maybe have verification from client that server is started)
         # else
         #   return ip and port of peer who is the "server"
+        #   update record (maybe have verification that user joined the table)
 
         # TODO: look into struct library to pack and send data
         pass
