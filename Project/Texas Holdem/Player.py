@@ -11,22 +11,24 @@ class Player(object):
         self.chips = Player.starting_chips
         self.made_move_this_turn = False
         self.has_folded = False
+        self.chips_in_pot = 0
+        self.chips_in_pot_this_turn = 0
     def bet(self, amount): # TODO: NEED TO ADD ERROR CONDITIONS AND ALL IN SPLIT POT
         if amount < self.chips:
             self.chips -= amount
-            self.chipsInPot += amount # TODO: shouldn't be for player
-            self.chipsInPotThisTurn += amount # TODO: chips player put in??
+            self.chips_in_pot += amount # TODO: shouldn't be for player
+            self.chips_in_pot_this_turn += amount # TODO: chips player put in??
         elif self.chips <= 0: # TODO: return None?
             None # Stops player from betting more, or remove player from the game
         else:# ALL IN CONDITION
-            self.chipsInPot += self.chips
+            self.chips_in_pot += self.chips
             self.chips = 0
     def add(self, amount):
         self.chips += amount
     def new_hand(self):
         self.has_folded = False
-        self.chipsInPot = 0
-        self.chipsInPotThisTurn = 0
+        self.chips_in_pot = 0
+        self.chips_in_pot_this_turn = 0
     def find_game(self):
         # TODO: 
         # req server for game
