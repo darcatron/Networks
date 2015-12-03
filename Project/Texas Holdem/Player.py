@@ -1,6 +1,13 @@
 import socket
 import sys # logging
 import pickle # send and recv python dict data
+import Dealer #import deuces
+
+#from deuces import Card
+#from deuces import Deck
+#from deuces import Evaluator
+
+#from Dealer import Dealer
 
 class Player(object):
     """
@@ -11,14 +18,22 @@ class Player(object):
 
     def __init__(self, username):
         self.username = username
+        
+        self.is_dealer = False
+        self.players_list = []
+        self.main_peer = None
+        self.backup_peer = None # TODO
+        
         self.hand = None
         self.chips = Player.starting_chips
         self.made_move_this_turn = False
         self.has_folded = False
         self.chips_in_pot = 0
         self.chips_in_pot_this_turn = 0
-        self.main_peer = None
-        self.backup_peer = None # TODO
+    def add_players(self, players):#Temporary Function
+        # TODO: maybe just have this function take in a player name and 
+        #       add it to the list rather than overwrite the list
+        self.players_list = players
     def bet(self, amount): # TODO: NEED TO ADD ERROR CONDITIONS AND ALL IN SPLIT POT
         if amount < self.chips:
             self.chips -= amount
@@ -65,12 +80,26 @@ class Player(object):
             self.main_peer = socket.socket()
             self.main_peer.connect((game_data["host"], game_data["port"]))
     def play_game(self):
-        # TODO: peer is connected to another peer that is the "server"
-        # get_gamestate from "server"
-        # send "server" move
-        # TODO: look into pickle library to serialize and send data
-        pass
+        if self.is_dealer: #Sends dealers to another function
+            self.deal_game()
+        
+        #Else
+            #Wait for message
+            #Respond with message
+
+    def deal_game(self):
+        d = Dealer.Dealer()
+        d.AddPlayers(self.players_list)
+        dealer_token = 0
+        
+        while len(self.players_list) > 1:#Really should be as long as there are more than 1 players with money
+            print "Now here"
+            dealer_token = (dealer_token + 1)%len(self.players_list)
+            d.DealHand(dealer_token)
+
+
     def start_server(self):
+        self.is_dealer = True
         # TODO: peer is Dealer
         # start TexasHoldem game
         # if new hand, wait a few seconds for new player requests
@@ -99,3 +128,16 @@ class Player(object):
         # send gamestate to each player
         # TODO: look into pickle library to serialize and send data
         pass
+
+pList = []
+p = Player('Sean')
+p.is_dealer=True
+pList.append(p)
+pList.append(Player('Bob'))
+pList.append(Player('Test'))
+pList.append(Player('Blah'))
+pList[0].add_players(pList)
+pList[0].play_game()
+
+
+
