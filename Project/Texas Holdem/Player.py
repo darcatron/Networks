@@ -1,3 +1,12 @@
+#import deuces
+import Dealer
+
+#from deuces import Card
+#from deuces import Deck
+#from deuces import Evaluator
+
+#from Dealer import Dealer
+
 class Player(object):
     """
     Information and possible actions of user 
@@ -7,12 +16,18 @@ class Player(object):
 
     def __init__(self, username):
         self.username = username
+        
+        self.isDealer = False
+        self.playersList = []
+        
         self.hand = None
         self.chips = Player.starting_chips
         self.made_move_this_turn = False
         self.has_folded = False
         self.chips_in_pot = 0
         self.chips_in_pot_this_turn = 0
+    def add_players(self, players):#Temporary Function
+        self.playersList = players
     def bet(self, amount): # TODO: NEED TO ADD ERROR CONDITIONS AND ALL IN SPLIT POT
         if amount < self.chips:
             self.chips -= amount
@@ -39,12 +54,32 @@ class Player(object):
         #   connect to peer
         pass
     def play_game(self):
-        # TODO: peer is connected to another peer that is the "server"
-        # get_gamestate from "server"
-        # send "server" move
-        # TODO: look into pickle library to serialize and send data
-        pass
+
+        if self.isDealer: #Sends dealers to another function
+            self.deal_game()
+        
+        #Else
+            #Wait for message
+            #Respond with message
+
+
+
+
+        
+    
+    def deal_game(self):
+        d = Dealer.Dealer()
+        d.AddPlayers(self.playersList)
+        dealer_token = 0
+        
+        while len(self.playersList) > 1:#Really should be as long as there are more than 1 players with money
+            print "Now here"
+            dealer_token = (dealer_token + 1)%len(self.playersList)
+            d.DealHand(dealer_token)
+
+
     def start_server(self):
+        self.isDealer = True
         # TODO: peer is Dealer
         # start TexasHoldem game
         # if new hand, wait a few seconds for new player requests
@@ -59,3 +94,16 @@ class Player(object):
         # send gamestate to each player
         # TODO: look into pickle library to serialize and send data
         pass
+
+pList = []
+p = Player('Sean')
+p.isDealer=True
+pList.append(p)
+pList.append(Player('Bob'))
+pList.append(Player('Test'))
+pList.append(Player('Blah'))
+pList[0].add_players(pList)
+pList[0].play_game()
+
+
+
