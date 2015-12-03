@@ -92,6 +92,7 @@ int send_pkts(FILE *fp, int last_sent, int window_max, int sockfd, int* clientle
     int send_size = (pkt.seq_num == final_seq_num) ? ((TYPEWINDOWSEQSIZE * 2) + final_pkt_size) : sizeof(DataPkt);
     n = sendto(sockfd, (char *) &pkt, send_size, 0, 
                (struct sockaddr *) clientaddr, *clientlen);
+    printf("sending pkt seq num: %d\n", pkt.seq_num);
     if (n < 0) 
       error("ERROR in sendto");
   }
