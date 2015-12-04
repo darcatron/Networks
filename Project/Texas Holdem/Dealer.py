@@ -11,6 +11,7 @@ class Dealer(object):
     """
     large_blind_amount = 2
     small_blind_amount = 1
+    MAXPLAYERS = 5
 
     def __init__(self):
         import Player
@@ -115,12 +116,14 @@ class Dealer(object):
                         move = raw_input('Fold (F), Call (C), or Raise (R-(numChips))? ')
                     else:
                         #MSG SENDS CARDS IN HAND AND ON BOARD TO PLAYER. WAIT FOR THEIR RESPONSE. THEN UPDATE OTHER PLAYERS ABOUT RESPONSE. (IN THESE CASES, IT IS SUFFICIENT TO SEND A MESSAGE THAT THE PERSON CAN PRINT DIRECTLY) MAYBE THIS IS THE CASE WITH ALL OF THE MESSAGES
+                        pass
                 else:
                     if self.players[turn].isDealer:
                         print 'Pot size is: %d. You have %d remaining chips' % (self.TotalPot(), self.players[turn].chips)
                         move = raw_input('Fold (F), Check (C), or Bet (B-(numChips))? ')
                     else:
                         #MSG SENDS CARDS IN HAND AND ON BOARD TO PLAYER. WAIT FOR THEIR RESPONSE. THEN UPDATE OTHER PLAYERS ABOUT RESPONSE
+                        pass
                         
                 self.players[turn].made_move_this_turn = True
             else:
@@ -133,6 +136,7 @@ class Dealer(object):
                         move = raw_input('Fold (F), Call (C), or Raise (R-(numChips))? ')
                     else:
                         #MSG SENDS CARDS IN HAND AND ON BOARD TO PLAYER. WAIT FOR THEIR RESPONSE. THEN UPDATE OTHER PLAYERS ABOUT RESPONSE
+                        pass
                 else:
                     roundOver = True  #If player has already moved, but has nothing to bet
                                            #Then the round is neccesarily over

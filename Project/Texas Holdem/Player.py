@@ -1,4 +1,5 @@
 import socket
+from select import select # for non blocking sockets
 import sys # logging
 import pickle # send and recv python dict data
 import Dealer #import deuces
@@ -19,11 +20,16 @@ class Player(object):
     def __init__(self, username):
         self.username = username
         
+        # connection info
         self.is_dealer = False
+        self.dealer = None
         self.players_list = []
+        self.timeout = 5 
+        self.peers = [] # socket info of other players (used by main_peer)
         self.main_peer = None
         self.backup_peer = None # TODO
         
+        # game info
         self.hand = None
         self.chips = Player.starting_chips
         self.made_move_this_turn = False
@@ -73,7 +79,7 @@ class Player(object):
         
         if game_data["new_table"]:
             # player is "server", start "sever" for peers
-            self.start_server()
+            self.start_server(game_data["host"], game_data["port"])
             # TODO: setup gamestate info
         else:
             # connect to peer
@@ -87,8 +93,22 @@ class Player(object):
             #Wait for message
             #Respond with message
 
+        # While (game not over)
+            if len(self.players_list) < Dealer.MAXPLAYERS:
+                # check for new player
+                read_ready, _dummy, _dummy = select([self.main_peer], [], [], self.timeout)
+                if read_ready:
+                    client, addr = self.main_peer.accept() # Establish connection with new client
+                    sys.stderr.write('Got connection from: ' + str(addr) + str(client) + "\n\n")
+                    # get username and starting chip value from new player
+                    client_data = pickle.loads(client.recv(1024))
+                    sys.stderr.write("recvd req: " + str(client_data) + "\n\n")
+                    # TODO: add player
+            # play round
+
     def deal_game(self):
-        d = Dealer.Dealer()
+        # TODO: d is moved to start_server and is now self.dealer
+        d = Dealer()
         d.AddPlayers(self.players_list)
         dealer_token = 0
         
@@ -98,18 +118,20 @@ class Player(object):
             d.DealHand(dealer_token)
 
 
-    def start_server(self):
+    def start_server(self, host, port):
         self.is_dealer = True
-        # TODO: peer is Dealer
-        # start TexasHoldem game
-        # if new hand, wait a few seconds for new player requests
-        # get moves from each peer
-        pass
+        self.dealer = Dealer.Dealer()
+        self.main_peer = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Create a socket object
+        self.main_peer.setblocking(0) # Non blocking
+        self.main_peer.bind((host, port)) # Bind to the port given by server
+        self.main_peer.listen(5) # Now wait for peer connection
+        self.play_game()
     def get_gamestate(self):
         # TODO: parse gamestate data and update self
         # TODO: look into pickle library to unserialize data
         pass
-    def get_data(self, connected_socket, data_to_receive):
+    @staticmethod
+    def get_data(connected_socket, data_to_receive):
         chunks = []
         bytes_recvd = 0
 

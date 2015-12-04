@@ -1,19 +1,3 @@
- ☐ one table of 5 and dealer
- ☐ purchase chips
- ☐ cash out chips
- ☐ card dealing to players
- ☐ state preservation
-   ☐ chips for each player
-   ☐ player hands
-
-P2P Protocol:
-  ☐ 1) new players talk to server and join a table (only one table at first)
-  ☐ 2) players use P2P type communication to play game
-    ☐ 2a) game state within each player with one player being the dealer and actually utilizing the dealer info
-    ☐ 2b) dealer shift if player d/cs
-    ☐ 2c) communication to server of new information every turn in case all players d/c
-
-
  Necessary Info:
    what happens if everyone disconnects and
      no one comes back
@@ -23,9 +7,4 @@ P2P Protocol:
 
    will need to store player info on disk or at least have a way to mimick a "server failure"
 
-   Maybe have some sort of user authentication with ip address or password?
-
- Questions:
-   - how long does recv(1024 bytes) wait if it doesn't get all the data I say it should read
-   - best route to getting client msg len
-  
+   Maybe have some sort of user authentication with ip address or password?  
