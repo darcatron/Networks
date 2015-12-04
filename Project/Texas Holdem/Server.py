@@ -2,6 +2,7 @@ import socket
 from select import select # for non blocking sockets
 import sys # logging
 import pickle # send and recv python dict data
+from random import randint
 
 class Server(object):
     """
@@ -9,6 +10,7 @@ class Server(object):
      maintains user information
     """
     timeout = 60 # seconds
+    MAXPLAYERSPERTABLE = 5
 
     def __init__(self):
         self.users = [] # all poker players (offline or online)
@@ -26,7 +28,7 @@ class Server(object):
 
         while True:
             sys.stderr.write("active_sockets: " + str(self.active_sockets) + "\n\n")
-            read_ready, write_ready, errs = select(self.active_sockets, [], [], Server.timeout)
+            read_ready, _dummy, _dummy = select(self.active_sockets, [], [], Server.timeout)
             
             for s in read_ready:
                 if s is server_socket:
@@ -120,25 +122,26 @@ class Server(object):
         client_socket.close()
     def get_open_table(self, username):
         # TODO: 
-        # if new username
-        #   create_new_user
-        # if no open tables
-        #   user is first player
-        #   user will be the "server"
-        #   send user a port they should start the "server" on and keep track of it
-        #   (maybe have verification from client that server is started)
-        # else
-        #   return ip and port of peer who is the "server"
-        #   update record (maybe have verification that user joined the table)
+        if username not in [p["username"] for p in self.users]:
+            self.create_new_user(username)
+        
+        for table in self.tables:
+            if table["num_players"] < Server.MAXPLAYERSPERTABLE:
+                table["num_players"] += 1
+                return table
+            else: # no open tables
+                # user will be the "server"
+                # TODO:
+                # port = randint(8000, 9000)
+                # self.tables.append({"num_players" : 1,
+                #                     "host" : 
+                #                     "port" : port})
+                # send user a port they should start the "server" on and keep track of it
+                # return port
+                pass
 
-        # TODO: look into struct library to pack and send data
-        pass
     def send_table(self, client):
-        # TODO: 
-        # get_open_table(username)
-        # put in dict -> pickle dumps
-        # send table info
-        # (get verification)
+        # TODO:
         client.close() # Close the connection
     def create_new_table(self, ip_address, port):
         pass

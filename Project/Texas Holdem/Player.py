@@ -89,9 +89,29 @@ class Player(object):
         if self.is_dealer: #Sends dealers to another function
             self.deal_game()
         
-        #Else
-            #Wait for message
-            #Respond with message
+        id_num = 0
+        while(id_num != 5):
+            msg = pickle.loads(self.main_peer.recv(1024))
+            id_num = msg["id"]
+            if id_num == 1: #Print
+                print msg["print"]
+            elif id_num == 2: #F,C,B
+                if msg["board"]:
+                    Card.print_pretty_cards(msg["board"])
+                Card.print_pretty_cards(msg["hand"])
+                print 'Pot size is: %d. You have %d remaining chips' % (msg["pot"], msg["chips"])
+                move = raw_input('Fold (F), Check (C), or Bet (B-numChips)? ')
+                self.main_peer.send(pickle.dumps({"id" : 4, "move" : move}))
+            elif id_num == 3: #F,C,R
+                if msg["board"]:
+                    Card.print_pretty_cards(msg["board"])
+                Card.print_pretty_cards(msg["hand"])
+                print 'Pot size is: %d. Call %d to stay in. You have %d remaining chips' % (msg["pot"], msg["curr_bet"], msg["chips"])
+                move = raw_input('Fold (F), Call (C), or Raise (R-numChips)? ')
+                self.main_peer.send(pickle.dumps({"id" : 4, "move" : move}))
+            elif id_num == 5:
+                print msg["print"]
+                                                                                            
 
         # While (game not over)
             if len(self.players_list) < Dealer.MAXPLAYERS:
@@ -113,7 +133,6 @@ class Player(object):
         dealer_token = 0
         
         while len(self.players_list) > 1:#Really should be as long as there are more than 1 players with money
-            print "Now here"
             dealer_token = (dealer_token + 1)%len(self.players_list)
             d.DealHand(dealer_token)
 
@@ -151,15 +170,15 @@ class Player(object):
         # TODO: look into pickle library to serialize and send data
         pass
 
-pList = []
-p = Player('Sean')
-p.is_dealer=True
-pList.append(p)
-pList.append(Player('Bob'))
-pList.append(Player('Test'))
-pList.append(Player('Blah'))
-pList[0].add_players(pList)
-pList[0].play_game()
+# pList = []
+# p = Player('Sean')
+# p.is_dealer=True
+# pList.append(p)
+# pList.append(Player('Bob'))
+# pList.append(Player('Test'))
+# pList.append(Player('Blah'))
+# pList[0].add_players(pList)
+# pList[0].play_game()
 
 
 
