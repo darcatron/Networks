@@ -36,13 +36,14 @@ class Dealer(object):
             total += p.chips_in_pot
         return total
     
-    def SendMessageToAll(self, msg):
+    def SendMessageToAll(self, turn, msg):
         unpickled = pickle.loads(msg)
         for p in self.players:
-            if not(p.is_dealer):
-                p.recv_socket.send(msg)
-            else:
-                print unpickled["print"]
+            if self.players.index(p) != turn:
+                if not(p.is_dealer):
+                    p.recv_socket.send(msg)
+                else:
+                    print unpickled["print"]
     
     def LastFolded(self):
         total = 0
@@ -61,7 +62,7 @@ class Dealer(object):
         for p in self.players:
             if not(p.has_folded):
                 p.add(self.TotalPot())
-                self.SendMessageToAll(pickle.dumps({"id" : 5, "print" : p.username + " wins on fold"}))
+                self.SendMessageToAll(-1, pickle.dumps({"id" : 5, "print" : p.username + " wins on fold"}))
 
     def dividePot(self, winners):
         numWinners = len(winners)
@@ -90,10 +91,10 @@ class Dealer(object):
         self.dividePot(winners)
     
         if len(winners) == 1:
-            self.SendMessageToAll(pickle.dumps({"id" : 5, "print" : winners[0].username + " wins with " + class_string}))
+            self.SendMessageToAll(-1, pickle.dumps({"id" : 5, "print" : self.players[winners[0]].username + " wins with " + class_string}))
         else:
             #Edge Case. Not accounted for in messages
-            self.SendMessageToAll(pickle.dumps({"id" : 5, "print" : winners[0].username + " wins with " + class_string}))
+            self.SendMessageToAll(-1, pickle.dumps({"id" : 5, "print" : self.players[winners[0]].username + " wins with " + class_string}))
     def dealer_index(self):
         for p in self.players:
             if p.is_dealer:
@@ -113,10 +114,11 @@ class Dealer(object):
             if(self.players[turn].has_folded):
                 None
             elif not((self.players[turn].made_move_this_turn)):
-                
-                if self.board:
-                    Card.print_pretty_cards(self.board)
-                Card.print_pretty_cards(self.players[turn].hand)
+
+                if self.players[turn].is_dealer:
+                    if self.board:
+                        Card.print_pretty_cards(self.board)
+                    Card.print_pretty_cards(self.players[turn].hand)
                 
                 if self.players[turn].chips_in_pot_this_turn < toPay:
                     if self.players[turn].is_dealer:
@@ -125,7 +127,7 @@ class Dealer(object):
                         response = pickle.loads(pickle.dumps({"id" : 4, "move" : move}))#For consistency
                     else:
                         self.players[turn].recv_socket.send(pickle.dumps({"id" : 3, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "curr_bet" : toPay - self.players[turn].chips_in_pot_this_turn, "pot" : self.TotalPot()}))
-                        response = pickle.loads(self.players[turn].recv(1024))
+                        response = pickle.loads(self.players[turn].recv_socket.recv(1024))
                 else:
                     if self.players[turn].is_dealer:
                         print 'Pot size is: %d. You have %d remaining chips' % (self.TotalPot(), self.players[turn].chips)
@@ -133,21 +135,23 @@ class Dealer(object):
                         response = pickle.loads(pickle.dumps({"id" : 4, "move" : move}))#For consistency
                     else:
                         self.players[turn].recv_socket.send(pickle.dumps({"id" : 2, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "pot" : self.TotalPot()}))
-                        response = pickle.loads(self.players[turn].recv(1024))
+                        response = pickle.loads(self.players[turn].recv_socket.recv(1024))
                         
                 self.players[turn].made_move_this_turn = True
             else:
                 if self.players[turn].chips_in_pot_this_turn < toPay:
-                    if self.board:
-                        Card.print_pretty_cards(self.board)
-                    Card.print_pretty_cards(self.players[turn].hand)
+                    if self.players[turn].is_dealer:
+                        if self.board:
+                            Card.print_pretty_cards(self.board)
+                        Card.print_pretty_cards(self.players[turn].hand)
+                        
                     if self.players[turn].is_dealer:
                         print 'Pot size is: %d. Call %d to stay in. You have %d remaining chips' % (self.TotalPot(), toPay - self.players[turn].chips_in_pot_this_turn, self.players[turn].chips)
                         move = raw_input('Fold (F), Call (C), or Raise (R-numChips)? ')
                         response = pickle.loads(pickle.dumps({"id" : 4, "move" : move}))#For consistency
                     else:
                         self.players[turn].recv_socket.send(pickle.dumps({"id" : 3, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "curr_bet" : toPay - self.players[turn].chips_in_pot_this_turn, "pot" : self.TotalPot()}))
-                        response = pickle.loads(self.players[turn].recv(1024))
+                        response = pickle.loads(self.players[turn].recv_socket.recv(1024))
 
                 else:
                     roundOver = True  #If player has already moved, but has nothing to bet
@@ -166,10 +170,15 @@ class Dealer(object):
                 increase = int(response["move"][2:])
                 toPay += increase
                 self.players[turn].bet(increase)
+            elif response["move"] == 'N':
+                continue
 
-            self.SendMessageToAll(pickle.dumps({"id" : 1, "print" : self.players[turn].username + " " + response["move"]}))
+            print "Going to Send ALL. Turn is %d" % turn
+            self.SendMessageToAll(turn, pickle.dumps({"id" : 1, "print" : self.players[turn].username + " " + response["move"]}))
+            response["move"]='N'
             
             turn = (turn+1)%len(self.players)
+            #print "%d" % turn
             
         for p in self.players:
             p.chips_in_pot_this_turn = 0

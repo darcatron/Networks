@@ -2,9 +2,10 @@ import socket
 from select import select # for non blocking sockets
 import sys # logging
 import pickle # send and recv python dict data
-import Dealer #import deuces
+import Dealer
 
-#from deuces import Card
+import deuces
+from deuces import Card
 #from deuces import Deck
 #from deuces import Evaluator
 
@@ -101,6 +102,8 @@ class Player(object):
         while(True):
             if self.is_dealer and len(self.players_list) < Player.MAXPLAYERS:
                 # check for new player
+                if self not in self.players_list: #NEW LINES
+                    self.add_player(self)
                 read_ready, _dummy, _dummy = select([self.main_peer], [], [], Player.timeout)
                 if read_ready:
                     client, addr = self.main_peer.accept() # Establish connection with new client
@@ -116,14 +119,17 @@ class Player(object):
                     self.add_player(p)
                 
             #Playing round
-            if len(self.players_list) > 1:
+            if (not self.is_dealer) or (self.is_dealer and len(self.players_list) > 1): #Should be checking list size, but if not dealer, must be at least 2 people
+                sys.stderr.write("Length is long enough" + "\n\n")
                 if self.is_dealer: #DEALER CODE
+                    sys.stderr.write("I AM THE DEALER" + "\n\n")
                     d = Dealer.Dealer()
                     d.AddPlayers(self.players_list)
                     self.dealer_token = (self.dealer_token + 1)%len(self.players_list)
                     d.DealHand(self.dealer_token)
-                    self.play_game()
+
                 else:
+                    sys.stderr.write("I AM THE PLAYER" + "\n\n")
                     id_num = 0
                     while(id_num != 5): #PLAYER CODE
                         msg = pickle.loads(self.main_peer.recv(1024))
@@ -145,7 +151,8 @@ class Player(object):
                             move = raw_input('Fold (F), Call (C), or Raise (R-numChips)? ')
                             self.main_peer.send(pickle.dumps({"id" : 4, "move" : move}))
                         elif id_num == 5:
-                            print msg["print"]                                                                                        
+                            print msg["print"]
+                        id_num = 0
     
                 
             #Leave function if have 0 chips left
