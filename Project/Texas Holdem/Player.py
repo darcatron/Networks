@@ -91,6 +91,8 @@ class Player(object):
             # connect to peer
             self.main_peer = socket.socket()
             self.main_peer.connect((game_data["host"], game_data["port"]))
+            self.main_peer.send(pickle.dumps({"username" : self.username, "num_chips" : self.chips}))
+
     def play_game(self):
         sys.stderr.write("beginning play game" + "\n\n")
 
