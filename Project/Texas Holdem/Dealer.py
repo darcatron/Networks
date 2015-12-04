@@ -1,4 +1,5 @@
 import deuces
+import pickle
 
 from deuces import Card
 from deuces import Deck
@@ -13,7 +14,7 @@ class Dealer(object):
     small_blind_amount = 1
 
     def __init__(self):
-        import Player
+        import Player #Place here to avoid circular dependency on imports
         self.players = []
         self.total_pot = 0
         self.board = None
@@ -34,6 +35,13 @@ class Dealer(object):
         for p in self.players:
             total += p.chips_in_pot
         return total
+    def SendMessageToAll(self, msg):
+        unpickled = pickle.loads(msg)
+        for p in self.players:
+            if not(p.is_dealer):
+                p.my_socket.send(msg)
+            else:
+                print unpickled["print"]
     
     #Returns True if all players but one have folded
     def LastFolded(self):
@@ -54,6 +62,7 @@ class Dealer(object):
         for p in self.players:
             if not(p.has_folded):
                 p.add(self.TotalPot())
+                self.SendMessageToAll(pickle.dumps({"id" : 5, "print" : p.username + " wins on fold"}))
 
     def dividePot(self, winners):
         numWinners = len(winners)
@@ -84,10 +93,14 @@ class Dealer(object):
         self.dividePot(winners)
     
         if len(winners) == 1:
-            #Will print usernames eventually
-            print 'Player x wins with %s' % class_string
+            self.SendMessageToAll(pickle.dumps({"id" : 5, "print" : winners[0].username + " wins with " + class_string}))
         else:
-            print 'Players x and y win with %s' % class_string
+            print 'Players x and y win with %s' % class_string #Edge Case
+
+    def dealer_index(self):
+        for p in self.players:
+            if p.is_dealer:
+                return players.index(p)
         
 
     def Bets(self,startingPlayer, startingAmount):
@@ -110,17 +123,24 @@ class Dealer(object):
                 Card.print_pretty_cards(self.players[turn].hand)
                 
                 if self.players[turn].chips_in_pot_this_turn < toPay:
-                    if self.players[turn].isDealer:
+                    if self.players[turn].is_dealer:
                         print 'Pot size is: %d. Call %d to stay in. You have %d remaining chips' % (self.TotalPot(), toPay - self.players[turn].chips_in_pot_this_turn, self.players[turn].chips) 
-                        move = raw_input('Fold (F), Call (C), or Raise (R-(numChips))? ')
+                        move = raw_input('Fold (F), Call (C), or Raise (R-numChips)? ')
+                        response = pickle.loads(pickle.dumps({"id" : 4, "move" : move}))#For consistency
+                        #SendMessageToAll(pickle.dumps({"ID" : 1, "To_Print" : self.players[turn].username + " " + move}))
                     else:
-                        #MSG SENDS CARDS IN HAND AND ON BOARD TO PLAYER. WAIT FOR THEIR RESPONSE. THEN UPDATE OTHER PLAYERS ABOUT RESPONSE. (IN THESE CASES, IT IS SUFFICIENT TO SEND A MESSAGE THAT THE PERSON CAN PRINT DIRECTLY) MAYBE THIS IS THE CASE WITH ALL OF THE MESSAGES
+                        #MSG
+                        self.players[turn].my_socket.send(pickle.dump({"id" : 3, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "curr_bet" : toPay - self.players[turn].chips_in_pot_this_turn, "pot" : self.TotalPot()}))
+                        response = pickle.loads(self.players[turn].recv(1024))
                 else:
-                    if self.players[turn].isDealer:
+                    if self.players[turn].is_dealer:
                         print 'Pot size is: %d. You have %d remaining chips' % (self.TotalPot(), self.players[turn].chips)
-                        move = raw_input('Fold (F), Check (C), or Bet (B-(numChips))? ')
+                        move = raw_input('Fold (F), Check (C), or Bet (B-numChips)? ')
+                        response = pickle.loads(pickle.dumps({"id" : 4, "move" : move}))#For consistency
                     else:
-                        #MSG SENDS CARDS IN HAND AND ON BOARD TO PLAYER. WAIT FOR THEIR RESPONSE. THEN UPDATE OTHER PLAYERS ABOUT RESPONSE
+                        #MSG
+                        self.players[turn].my_socket.send(pickle.dump({"id" : 2, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "pot" : self.TotalPot()}))
+                        response = pickle.loads(self.players[turn].recv(1024))
                         
                 self.players[turn].made_move_this_turn = True
             else:
@@ -128,31 +148,36 @@ class Dealer(object):
                     if self.board:
                         Card.print_pretty_cards(self.board)
                     Card.print_pretty_cards(self.players[turn].hand)
-                    if self.players[turn].isDealer:
+                    if self.players[turn].is_dealer:
                         print 'Pot size is: %d. Call %d to stay in. You have %d remaining chips' % (self.TotalPot(), toPay - self.players[turn].chips_in_pot_this_turn, self.players[turn].chips)
-                        move = raw_input('Fold (F), Call (C), or Raise (R-(numChips))? ')
+                        move = raw_input('Fold (F), Call (C), or Raise (R-numChips)? ')
+                        response = pickle.loads(pickle.dumps({"id" : 4, "move" : move}))#For consistency
                     else:
-                        #MSG SENDS CARDS IN HAND AND ON BOARD TO PLAYER. WAIT FOR THEIR RESPONSE. THEN UPDATE OTHER PLAYERS ABOUT RESPONSE
+                        #MSG
+                        self.players[turn].my_socket.send(pickle.dump({"id" : 3, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "curr_bet" : toPay - self.players[turn].chips_in_pot_this_turn, "pot" : self.TotalPot()}))
+                        response = pickle.loads(self.players[turn].recv(1024))
+
                 else:
                     roundOver = True  #If player has already moved, but has nothing to bet
                                            #Then the round is neccesarily over
-            if move == 'F':
+            if response["move"] == 'F':
                 self.players[turn].has_folded = True
                 roundOver = self.LastFolded()
-            elif move == 'C':
+            elif response["move"] == 'C':
                 self.players[turn].bet(toPay-self.players[turn].chips_in_pot_this_turn)
                 
             #BOTH OF THESE CHECKS WILL BE REMOVED, SINCE PLAYERS WILL NOW UPDATE THE MONEY AS THEY MAKE A DECISION
-            elif move == 'R':
-                print 'The current bet is %d.' % toPay
-                increase = input('How much do you want to raise? ')
+            elif response["move"][0] == 'R':
+                increase = int(response["move"][2:])
                 toPay += increase - (toPay - self.players[turn].chips_in_pot_this_turn)
                 self.players[turn].bet(increase)
-            elif move == 'B':
-                increase = input('How much do you want to bet? ')
+            elif response["move"][0] == 'B':
+                increase = int(response["move"][2:])
                 toPay += increase
                 self.players[turn].bet(increase)
-                
+
+            self.SendMessageToAll(pickle.dumps({"id" : 1, "print" : self.players[turn].username + " " + response["move"]}))
+            
             turn = (turn+1)%len(self.players)
             
         #To let the dealer know if the round has ended
