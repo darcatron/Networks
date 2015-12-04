@@ -29,6 +29,7 @@ class Player(object):
         self.peers = [] # socket info of other players (used by main_peer)
         self.main_peer = None
         self.backup_peer = None # TODO
+        self.recv_socket = None
         
         # game info
         self.dealer_token = 0
@@ -94,58 +95,59 @@ class Player(object):
     def play_game(self):
         sys.stderr.write("beginning play game" + "\n\n")
 
-        # While (game not over)
-        if len(self.players_list) < Player.MAXPLAYERS:
-                # check for new player
-            read_ready, _dummy, _dummy = select([self.main_peer], [], [], Player.timeout)
-            if read_ready:
-                client, addr = self.main_peer.accept() # Establish connection with new client
-                sys.stderr.write('Got connection from: ' + str(addr) + str(client) + "\n\n")
-                    # get username and starting chip value from new player
-                client_data = pickle.loads(client.recv(1024))
-                sys.stderr.write("recvd req: " + str(client_data) + "\n\n")
-                    # TODO: add player
-                self.add_player(Player("USERNAME?"))
-            
-        #Playing round
-        if len(self.players_list) > 1:
-            if self.is_dealer: #DEALER CODE
-                d = Dealer.Dealer()
-                #d.AddPlayers(self.players_list)
-                self.dealer_token = (self.dealer_token + 1)%len(self.players_list)
-                d.DealHand(self.dealer_token)
-                self.play_game()
+        while(True):
+            if len(self.players_list) < Player.MAXPLAYERS:
+                    # check for new player
+                read_ready, _dummy, _dummy = select([self.main_peer], [], [], Player.timeout)
+                if read_ready:
+                    client, addr = self.main_peer.accept() # Establish connection with new client
+                    sys.stderr.write('Got connection from: ' + str(addr) + str(client) + "\n\n")
+                        # get username and starting chip value from new player
+                    client_data = pickle.loads(client.recv(1024))
+                    sys.stderr.write("recvd req: " + str(client_data) + "\n\n")
+                    
+                        # TODO: add player
+                    self.self.recvr_socket = client
+                    self.add_player(self)
                 
-            id_num = 0
-            while(id_num != 5): #PLAYER CODE
-                msg = pickle.loads(self.main_peer.recv(1024))
-                id_num = msg["id"]
-                if id_num == 1: #Print
-                    print msg["print"]
-                elif id_num == 2: #F,C,B
-                    if msg["board"]:
-                        Card.print_pretty_cards(msg["board"])
-                    Card.print_pretty_cards(msg["hand"])
-                    print 'Pot size is: %d. You have %d remaining chips' % (msg["pot"], msg["chips"])
-                    move = raw_input('Fold (F), Check (C), or Bet (B-numChips)? ')
-                    self.main_peer.send(pickle.dumps({"id" : 4, "move" : move}))
-                elif id_num == 3: #F,C,R
-                    if msg["board"]:
-                        Card.print_pretty_cards(msg["board"])
-                    Card.print_pretty_cards(msg["hand"])
-                    print 'Pot size is: %d. Call %d to stay in. You have %d remaining chips' % (msg["pot"], msg["curr_bet"], msg["chips"])
-                    move = raw_input('Fold (F), Call (C), or Raise (R-numChips)? ')
-                    self.main_peer.send(pickle.dumps({"id" : 4, "move" : move}))
-                elif id_num == 5:
-                    print msg["print"]                                                                                        
-
-            
-        #Leave function if have 0 chips left
-        if self.chips <= 0:
-            print "You have no chips. Please purchase more chips to continue playing."
-        else:
-            self.play_game()
-
+            #Playing round
+            if len(self.players_list) > 1:
+                if self.is_dealer: #DEALER CODE
+                    d = Dealer.Dealer()
+                    #d.AddPlayers(self.players_list)
+                    self.dealer_token = (self.dealer_token + 1)%len(self.players_list)
+                    d.DealHand(self.dealer_token)
+                    self.play_game()
+                 else:               
+                    id_num = 0
+                    while(id_num != 5): #PLAYER CODE
+                        msg = pickle.loads(self.main_peer.recv(1024))
+                        id_num = msg["id"]
+                        if id_num == 1: #Print
+                            print msg["print"]
+                        elif id_num == 2: #F,C,B
+                            if msg["board"]:
+                                Card.print_pretty_cards(msg["board"])
+                            Card.print_pretty_cards(msg["hand"])
+                            print 'Pot size is: %d. You have %d remaining chips' % (msg["pot"], msg["chips"])
+                            move = raw_input('Fold (F), Check (C), or Bet (B-numChips)? ')
+                            self.main_peer.send(pickle.dumps({"id" : 4, "move" : move}))
+                        elif id_num == 3: #F,C,R
+                            if msg["board"]:
+                                Card.print_pretty_cards(msg["board"])
+                            Card.print_pretty_cards(msg["hand"])
+                            print 'Pot size is: %d. Call %d to stay in. You have %d remaining chips' % (msg["pot"], msg["curr_bet"], msg["chips"])
+                            move = raw_input('Fold (F), Call (C), or Raise (R-numChips)? ')
+                            self.main_peer.send(pickle.dumps({"id" : 4, "move" : move}))
+                        elif id_num == 5:
+                            print msg["print"]                                                                                        
+    
+                
+            #Leave function if have 0 chips left
+            if self.chips <= 0:
+                print "You have no chips. Please purchase more chips to continue playing."
+                return
+    
     def start_server(self, host, port):
         self.is_dealer = True
         self.dealer = Dealer.Dealer()
