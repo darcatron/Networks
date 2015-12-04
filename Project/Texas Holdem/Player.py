@@ -17,6 +17,7 @@ class Player(object):
     """
     starting_chips = 150
     timeout = 5
+    MAXPLAYERS = 5
 
     def __init__(self, username):
         self.username = username
@@ -94,7 +95,7 @@ class Player(object):
         sys.stderr.write("beginning play game" + "\n\n")
 
         # While (game not over)
-        if len(self.players_list) < Dealer.MAXPLAYERS:
+        if len(self.players_list) < Player.MAXPLAYERS:
                 # check for new player
             read_ready, _dummy, _dummy = select([self.main_peer], [], [], Player.timeout)
             if read_ready:
@@ -107,42 +108,43 @@ class Player(object):
                 self.add_player(Player("USERNAME?"))
             
         #Playing round
-        if self.is_dealer: #DEALER CODE
-            d = Dealer()
-            #d.AddPlayers(self.players_list)
-            dealer_token = (dealer_token + 1)%len(self.players_list)
-            d.DealHand(dealer_token)
-            self.play_game()
-            
-        id_num = 0
-        while(id_num != 5): #PLAYER CODE
-            msg = pickle.loads(self.main_peer.recv(1024))
-            id_num = msg["id"]
-            if id_num == 1: #Print
-                print msg["print"]
-            elif id_num == 2: #F,C,B
-                if msg["board"]:
-                    Card.print_pretty_cards(msg["board"])
-                Card.print_pretty_cards(msg["hand"])
-                print 'Pot size is: %d. You have %d remaining chips' % (msg["pot"], msg["chips"])
-                move = raw_input('Fold (F), Check (C), or Bet (B-numChips)? ')
-                self.main_peer.send(pickle.dumps({"id" : 4, "move" : move}))
-            elif id_num == 3: #F,C,R
-                if msg["board"]:
-                    Card.print_pretty_cards(msg["board"])
-                Card.print_pretty_cards(msg["hand"])
-                print 'Pot size is: %d. Call %d to stay in. You have %d remaining chips' % (msg["pot"], msg["curr_bet"], msg["chips"])
-                move = raw_input('Fold (F), Call (C), or Raise (R-numChips)? ')
-                self.main_peer.send(pickle.dumps({"id" : 4, "move" : move}))
-            elif id_num == 5:
-                print msg["print"]                                                                                        
+        if len(self.players_list) > 1:
+            if self.is_dealer: #DEALER CODE
+                d = Dealer.Dealer()
+                #d.AddPlayers(self.players_list)
+                self.dealer_token = (self.dealer_token + 1)%len(self.players_list)
+                d.DealHand(self.dealer_token)
+                self.play_game()
+                
+            id_num = 0
+            while(id_num != 5): #PLAYER CODE
+                msg = pickle.loads(self.main_peer.recv(1024))
+                id_num = msg["id"]
+                if id_num == 1: #Print
+                    print msg["print"]
+                elif id_num == 2: #F,C,B
+                    if msg["board"]:
+                        Card.print_pretty_cards(msg["board"])
+                    Card.print_pretty_cards(msg["hand"])
+                    print 'Pot size is: %d. You have %d remaining chips' % (msg["pot"], msg["chips"])
+                    move = raw_input('Fold (F), Check (C), or Bet (B-numChips)? ')
+                    self.main_peer.send(pickle.dumps({"id" : 4, "move" : move}))
+                elif id_num == 3: #F,C,R
+                    if msg["board"]:
+                        Card.print_pretty_cards(msg["board"])
+                    Card.print_pretty_cards(msg["hand"])
+                    print 'Pot size is: %d. Call %d to stay in. You have %d remaining chips' % (msg["pot"], msg["curr_bet"], msg["chips"])
+                    move = raw_input('Fold (F), Call (C), or Raise (R-numChips)? ')
+                    self.main_peer.send(pickle.dumps({"id" : 4, "move" : move}))
+                elif id_num == 5:
+                    print msg["print"]                                                                                        
 
             
         #Leave function if have 0 chips left
         if self.chips <= 0:
             print "You have no chips. Please purchase more chips to continue playing."
         else:
-            play_game()
+            self.play_game()
 
     def start_server(self, host, port):
         self.is_dealer = True
@@ -177,3 +179,12 @@ class Player(object):
             sys.stderr.write("recieved bytes: " + str(bytes_recvd) + "\n\n")
 
         return pickle.loads(''.join(chunks))
+#pList = []
+#p = Player('Sean')
+#p.is_dealer=True
+#pList.append(p)
+#pList.append(Player('Bob'))
+#pList.append(Player('Test'))
+#pList.append(Player('Blah'))
+#pList[0].add_players(pList)
+#pList[0].play_game()
