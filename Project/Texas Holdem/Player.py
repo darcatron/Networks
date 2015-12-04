@@ -149,15 +149,15 @@ class Player(object):
         # TODO: look into pickle library to serialize and send data
         pass
 
-pList = []
-p = Player('Sean')
-p.is_dealer=True
-pList.append(p)
-pList.append(Player('Bob'))
-pList.append(Player('Test'))
-pList.append(Player('Blah'))
-pList[0].add_players(pList)
-pList[0].play_game()
+#pList = []
+#p = Player('Sean')
+#p.is_dealer=True
+#pList.append(p)
+#pList.append(Player('Bob'))
+#pList.append(Player('Test'))
+#pList.append(Player('Blah'))
+#pList[0].add_players(pList)
+#pList[0].play_game()
 
 
 
