@@ -29,7 +29,7 @@ class Player(object):
         self.peers = [] # socket info of other players (used by main_peer)
         self.main_peer = None
         self.backup_peer = None # TODO
-        self.recv_socket = None
+        self.recv_socket = None #For dealer, this is socket to send to this player
         
         # game info
         self.dealer_token = 0
@@ -96,7 +96,7 @@ class Player(object):
         sys.stderr.write("beginning play game" + "\n\n")
 
         while(True):
-            if len(self.players_list) < Player.MAXPLAYERS:
+            if self.is_dealer and len(self.players_list) < Player.MAXPLAYERS):
                     # check for new player
                 read_ready, _dummy, _dummy = select([self.main_peer], [], [], Player.timeout)
                 if read_ready:
@@ -107,8 +107,10 @@ class Player(object):
                     sys.stderr.write("recvd req: " + str(client_data) + "\n\n")
                     
                         # TODO: add player
-                    self.self.recvr_socket = client
-                    self.add_player(self)
+                    p = Player(client_data["username"])
+                    p.recv_socket = client
+                    p.chips = client_data["num_chips"]
+                    self.add_player(p)
                 
             #Playing round
             if len(self.players_list) > 1:
