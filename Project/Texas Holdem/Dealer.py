@@ -15,16 +15,15 @@ class Dealer(object):
     MAXPLAYERS = 5
 
     def __init__(self):
-        import Player #Place here to avoid circular dependency on imports
+        import Player #Placed here to avoid circular dependency on imports
         self.players = []
         self.total_pot = 0
         self.board = None
         self.dealer_token = 0
     
-    def AddPlayers(self, playerL):#Not exactly sure about this. Should player be constructed or passed directly to the function
+    def AddPlayers(self, playerL):#Not right
         self.players = playerL
 
-    #To account for the blinds
     def Blinds(self):
         smallBlind = (self.dealer_token + 1)%len(self.players)
         largeBlind = (self.dealer_token + 2)%len(self.players)
@@ -36,6 +35,7 @@ class Dealer(object):
         for p in self.players:
             total += p.chips_in_pot
         return total
+    
     def SendMessageToAll(self, msg):
         unpickled = pickle.loads(msg)
         for p in self.players:
@@ -44,7 +44,6 @@ class Dealer(object):
             else:
                 print unpickled["print"]
     
-    #Returns True if all players but one have folded
     def LastFolded(self):
         total = 0
         for p in self.players:
@@ -58,8 +57,7 @@ class Dealer(object):
         else:
             return False
 
-    #Victory for last players who has not folded
-    def FoldVictory(self):#MSG SEND MESSAGE TO ALL PEOPLE ABOUT WHO WON DUE TO FOLD VICTORY
+    def FoldVictory(self):
         for p in self.players:
             if not(p.has_folded):
                 p.add(self.TotalPot())
@@ -70,8 +68,7 @@ class Dealer(object):
         for w in winners:
            self.players[w].add(self.TotalPot() // numWinners) #//->To force whole numbers
 
-    #Victory if multiple players have made it to the end of the hand
-    def RankedVictory(self):#MSG SEND MESSAGE TO ALL PEOPLE ABOUT WHO WON DUE TO RANKED VICTORY
+    def RankedVictory(self):
         evaluator = Evaluator()
         best_rank = 7463 # One less than worse rank
         winners = []
@@ -87,7 +84,6 @@ class Dealer(object):
             elif rank < best_rank:
                 winners = [self.players.index(p)]
                 best_rank = rank
-                #To get the class of the victory to print
                 rank_class = evaluator.get_rank_class(rank)
                 class_string = evaluator.class_to_string(rank_class)
             
@@ -96,8 +92,8 @@ class Dealer(object):
         if len(winners) == 1:
             self.SendMessageToAll(pickle.dumps({"id" : 5, "print" : winners[0].username + " wins with " + class_string}))
         else:
-            print 'Players x and y win with %s' % class_string #Edge Case
-
+            #Edge Case. Not accounted for in messages
+            self.SendMessageToAll(pickle.dumps({"id" : 5, "print" : winners[0].username + " wins with " + class_string}))
     def dealer_index(self):
         for p in self.players:
             if p.is_dealer:
@@ -105,7 +101,6 @@ class Dealer(object):
         
 
     def Bets(self,startingPlayer, startingAmount):
-        #UPDATE GAMESTATE TO BACKUP PLAYER
         turn = startingPlayer
         toPay = startingAmount
     
@@ -128,9 +123,7 @@ class Dealer(object):
                         print 'Pot size is: %d. Call %d to stay in. You have %d remaining chips' % (self.TotalPot(), toPay - self.players[turn].chips_in_pot_this_turn, self.players[turn].chips) 
                         move = raw_input('Fold (F), Call (C), or Raise (R-numChips)? ')
                         response = pickle.loads(pickle.dumps({"id" : 4, "move" : move}))#For consistency
-                        #SendMessageToAll(pickle.dumps({"ID" : 1, "To_Print" : self.players[turn].username + " " + move}))
                     else:
-                        #MSG
                         self.players[turn].my_socket.send(pickle.dump({"id" : 3, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "curr_bet" : toPay - self.players[turn].chips_in_pot_this_turn, "pot" : self.TotalPot()}))
                         response = pickle.loads(self.players[turn].recv(1024))
                 else:
@@ -139,7 +132,6 @@ class Dealer(object):
                         move = raw_input('Fold (F), Check (C), or Bet (B-numChips)? ')
                         response = pickle.loads(pickle.dumps({"id" : 4, "move" : move}))#For consistency
                     else:
-                        #MSG
                         self.players[turn].my_socket.send(pickle.dump({"id" : 2, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "pot" : self.TotalPot()}))
                         response = pickle.loads(self.players[turn].recv(1024))
                         
@@ -154,7 +146,6 @@ class Dealer(object):
                         move = raw_input('Fold (F), Call (C), or Raise (R-numChips)? ')
                         response = pickle.loads(pickle.dumps({"id" : 4, "move" : move}))#For consistency
                     else:
-                        #MSG
                         self.players[turn].my_socket.send(pickle.dump({"id" : 3, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "curr_bet" : toPay - self.players[turn].chips_in_pot_this_turn, "pot" : self.TotalPot()}))
                         response = pickle.loads(self.players[turn].recv(1024))
                 else:
@@ -166,7 +157,6 @@ class Dealer(object):
             elif response["move"] == 'C':
                 self.players[turn].bet(toPay-self.players[turn].chips_in_pot_this_turn)
                 
-            #BOTH OF THESE CHECKS WILL BE REMOVED, SINCE PLAYERS WILL NOW UPDATE THE MONEY AS THEY MAKE A DECISION
             elif response["move"][0] == 'R':
                 increase = int(response["move"][2:])
                 toPay += increase - (toPay - self.players[turn].chips_in_pot_this_turn)
@@ -180,7 +170,6 @@ class Dealer(object):
             
             turn = (turn+1)%len(self.players)
             
-        #To let the dealer know if the round has ended
         for p in self.players:
             p.chips_in_pot_this_turn = 0
             
@@ -193,19 +182,16 @@ class Dealer(object):
         for p in self.players:
             p.new_hand()
 
-#Simulates a single hand
     def DealHand(self, dealer_token):
         self.dealer_token = dealer_token
     
-        handOver = False #True when all but one folds
+        handOver = False
         deck = Deck()
 
         self.Blinds()
  
         for p in self.players:
             p.hand = deck.draw(2)
-
-        #MSG SEND GAMESTATE TO BACKUP THAT INCLUDES DECK AND ALL PLAYER HANDS
 
         self.board = []
         numPlayers = len(self.players)
@@ -230,8 +216,6 @@ class Dealer(object):
 
         self.ResetHands()
 
-
-    #Returns true if only one player has chips left
     def isGameOver(self):
         total = 0
         for p in self.players:
@@ -243,14 +227,14 @@ class Dealer(object):
         else:
             return False
     
-    #Simulates an entire game
-    def dealGame(self):
-        gameOver = False
-        while not(gameOver):
-            #Add Players
-            self.dealer_token = (self.dealer_token+1)%len(self.players)
-            self.DealHand()
-            gameOver = self.isGameOver()
+    #Simulates an entire game. No longer being used. Game is controled from Player class
+    #def dealGame(self):
+#        gameOver = False
+#        while not(gameOver):
+#            #Add Players
+#            self.dealer_token = (self.dealer_token+1)%len(self.players)
+#            self.DealHand()
+#            gameOver = self.isGameOver()
 
 #dealer = Dealer()
 #dealer.AddPlayer(Player.Player('sean'))
