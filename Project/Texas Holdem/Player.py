@@ -93,22 +93,23 @@ class Player(object):
             self.main_peer = socket.socket()
             self.main_peer.connect((game_data["host"], game_data["port"]))
             self.main_peer.send(pickle.dumps({"username" : self.username, "num_chips" : self.chips}))
+            self.play_game()
 
     def play_game(self):
         sys.stderr.write("beginning play game" + "\n\n")
 
         while(True):
-            if self.is_dealer and len(self.players_list) < Player.MAXPLAYERS):
-                    # check for new player
+            if self.is_dealer and len(self.players_list) < Player.MAXPLAYERS:
+                # check for new player
                 read_ready, _dummy, _dummy = select([self.main_peer], [], [], Player.timeout)
                 if read_ready:
                     client, addr = self.main_peer.accept() # Establish connection with new client
                     sys.stderr.write('Got connection from: ' + str(addr) + str(client) + "\n\n")
-                        # get username and starting chip value from new player
+                    # get username and starting chip value from new player
                     client_data = pickle.loads(client.recv(1024))
                     sys.stderr.write("recvd req: " + str(client_data) + "\n\n")
                     
-                        # TODO: add player
+                    # TODO: add player
                     p = Player(client_data["username"])
                     p.recv_socket = client
                     p.chips = client_data["num_chips"]
@@ -118,11 +119,11 @@ class Player(object):
             if len(self.players_list) > 1:
                 if self.is_dealer: #DEALER CODE
                     d = Dealer.Dealer()
-                    #d.AddPlayers(self.players_list)
+                    d.AddPlayers(self.players_list)
                     self.dealer_token = (self.dealer_token + 1)%len(self.players_list)
                     d.DealHand(self.dealer_token)
                     self.play_game()
-                 else:               
+                else:
                     id_num = 0
                     while(id_num != 5): #PLAYER CODE
                         msg = pickle.loads(self.main_peer.recv(1024))
