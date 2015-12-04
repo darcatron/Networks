@@ -36,6 +36,7 @@ class Server(object):
                     sys.stderr.write('Got connection from: ' + str(addr) + str(client) + "\n\n")
                     self.active_sockets.append(client)
                     self.socket_infos.append({"socket_number" : client,
+                                                "host" : addr[0],
                                                 "data_to_receive" : 0})
                     read_ready.remove(server_socket)
                 else:
@@ -94,9 +95,13 @@ class Server(object):
     def handle_req(self, client_socket, client_req):
         if client_req["type"] == "play":
             sys.stderr.write('Got play request from ' + client_req["username"] + "\n\n")
-            # TODO
-            # table_data = self.get_open_table(client_req["username"])
-            # self.send_data(client_socket, table_data)
+            table_data = self.get_open_table(self.get_host(client_socket), client_req["username"])
+
+            if "new_table" not in table_data:
+                table_data["new_table"] = False
+            del table_data["num_players"] # remove extra data
+                
+            self.send_data(client_socket, table_data)
         elif client_req["type"] == "cash":
             # TODO
             sys.stderr.write('Got cash out request from ' + client_req["username"])
@@ -106,43 +111,53 @@ class Server(object):
         else:
             # TODO: handle bad req
             sys.stderr.write("bad req!" + "\n\n")
+
+        sys.stderr.write("closing socket " + str(client_socket))
+        client_socket.close() # Close the connection
+    def get_host(self, client_socket):
+        socket_index = self.get_index_of_socket(client_socket)
+        return self.socket_infos[socket_index]["host"]            
     @staticmethod
     def send_data(client_socket, data_to_send):
         # TODO
+        sys.stderr.write("trying to send" + str(data_to_send) + "\n\n")
+        data_to_send = pickle.dumps(data_to_send)
+        data_size_info = {"data_size_to_send" : len(data_to_send)}
+        # send notification that sending will start
+        client_socket.send(pickle.dumps(data_size_info))
+        sys.stderr.write("sent notification" + "\n")
+        # recieve ack
+        ack = client_socket.recv(1024)
+        sys.stderr.write("ack recieved: " + str(pickle.loads(ack)) + "\n")
+
+        # send data
         totalsent = 0
 
-        while totalsent < len(data_to_send):
+        while totalsent < data_size_info["data_size_to_send"]:
             sent = client_socket.send(data_to_send[totalsent:])
             sys.stderr.write("sent " + str(sent) + " bytes to socket " + str(client_socket))
             if sent == 0:
                 raise RuntimeError("socket connection broken")
             totalsent += sent
-
-        sys.stderr.write("closing socket " + str(client_socket))
-        client_socket.close()
-    def get_open_table(self, username):
-        # TODO: 
+    def get_open_table(self, host, username):
+        sys.stderr.write("trying to find table" + "\n\n")
         if username not in [p["username"] for p in self.users]:
             self.create_new_user(username)
+            sys.stderr.write("created new user" + "\n\n")
         
         for table in self.tables:
             if table["num_players"] < Server.MAXPLAYERSPERTABLE:
                 table["num_players"] += 1
                 return table
-            else: # no open tables
-                # user will be the "server"
-                # TODO:
-                # port = randint(8000, 9000)
-                # self.tables.append({"num_players" : 1,
-                #                     "host" : 
-                #                     "port" : port})
-                # send user a port they should start the "server" on and keep track of it
-                # return port
-                pass
-
-    def send_table(self, client):
-        # TODO:
-        client.close() # Close the connection
+        # no open tables, player will be "server"
+        port = randint(8000, 9000)
+        new_table = {"num_players" : 1,
+                     "host" : host,
+                     "port" : port}
+        self.tables.append(new_table)
+        new_table["new_table"] = True
+        # send user a port they should start the "server" on and keep track of it
+        return new_table
     def create_new_table(self, ip_address, port):
         pass
     def create_new_user(self, username):

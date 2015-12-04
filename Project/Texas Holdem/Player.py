@@ -70,12 +70,17 @@ class Player(object):
         sys.stderr.write("ack recieved: " + str(pickle.loads(ack)) + "\n\n")
         # send req for game
         client_socket.send(pickle.dumps(req_data))
+        sys.stderr.write("sent req for game" + "\n")
         # recv notification that sending will start
-        recv_info = self.get_data(client_socket, 1024)
+        recv_info = pickle.loads(client_socket.recv(1024))
+        sys.stderr.write("recvd notification for game info sending" + "\n")
         # send ack
-        client_socket.send({"data_size_to_receive" : recv_info["data_size_to_send"]})
+        ack_data = {"data_size_to_receive" : recv_info["data_size_to_send"]}
+        client_socket.send(pickle.dumps(ack_data))
+        sys.stderr.write("sent ack" + "\n")
         # recv game data
         game_data = self.get_data(client_socket, recv_info["data_size_to_send"])
+        sys.stderr.write("got game data" + "\n\n")
         
         if game_data["new_table"]:
             # player is "server", start "sever" for peers
@@ -110,8 +115,7 @@ class Player(object):
                 move = raw_input('Fold (F), Call (C), or Raise (R-numChips)? ')
                 self.main_peer.send(pickle.dumps({"id" : 4, "move" : move}))
             elif id_num == 5:
-                print msg["print"]
-                                                                                            
+                print msg["print"]                                                                                        
 
         # While (game not over)
             if len(self.players_list) < Dealer.MAXPLAYERS:
@@ -125,7 +129,6 @@ class Player(object):
                     sys.stderr.write("recvd req: " + str(client_data) + "\n\n")
                     # TODO: add player
             # play round
-
     def deal_game(self):
         # TODO: d is moved to start_server and is now self.dealer
         d = Dealer()
@@ -135,8 +138,6 @@ class Player(object):
         while len(self.players_list) > 1:#Really should be as long as there are more than 1 players with money
             dealer_token = (dealer_token + 1)%len(self.players_list)
             d.DealHand(dealer_token)
-
-
     def start_server(self, host, port):
         self.is_dealer = True
         self.dealer = Dealer.Dealer()
@@ -150,18 +151,19 @@ class Player(object):
         # TODO: look into pickle library to unserialize data
         pass
     @staticmethod
-    def get_data(connected_socket, data_to_receive):
+    def get_data(connected_socket, num_bytes_to_receive):
         chunks = []
         bytes_recvd = 0
-
-        while bytes_recvd < data_to_receive:
-            chunk = connected_socket.recv(min(data_to_receive - bytes_recvd, 2048))
+        sys.stderr.write("in get_data" + "\n\n")
+        while bytes_recvd < num_bytes_to_receive:
+            chunk = connected_socket.recv(min(num_bytes_to_receive - bytes_recvd, 2048))
             sys.stderr.write("recvd data: " + str(pickle.loads(chunk)) + "\n")
             if chunk == '':
                 # TODO: handle err
                 raise RuntimeError("socket connection broken")
             chunks.append(chunk)
             bytes_recvd += len(chunk)
+            sys.stderr.write("recieved bytes: " + str(bytes_recvd) + "\n\n")
 
         return pickle.loads(''.join(chunks))
     def send_gamestate(self):
