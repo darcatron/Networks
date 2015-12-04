@@ -9,7 +9,7 @@ class Server(object):
     Server that adds players to games
      maintains user information
     """
-    timeout = 60 # seconds
+    timeout = 30 # seconds
     MAXPLAYERSPERTABLE = 5
 
     def __init__(self):
@@ -121,14 +121,20 @@ class Server(object):
     def send_data(client_socket, data_to_send):
         # TODO
         sys.stderr.write("trying to send" + str(data_to_send) + "\n\n")
+        # set up transmission size data
         data_to_send = pickle.dumps(data_to_send)
         data_size_info = {"data_size_to_send" : len(data_to_send)}
         # send notification that sending will start
         client_socket.send(pickle.dumps(data_size_info))
         sys.stderr.write("sent notification" + "\n")
+        # wait until socket is ready
+        read_ready, _dummy, _dummy = select([client_socket], [], [], Server.timeout)
         # recieve ack
-        ack = client_socket.recv(1024)
-        sys.stderr.write("ack recieved: " + str(pickle.loads(ack)) + "\n")
+        if read_ready:
+            ack = client_socket.recv(1024)
+            sys.stderr.write("ack recieved: " + str(pickle.loads(ack)) + "\n")
+        else:
+            raise RuntimeError("never received ack")
 
         # send data
         totalsent = 0

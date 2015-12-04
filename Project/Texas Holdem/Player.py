@@ -16,6 +16,7 @@ class Player(object):
      that is sitting in a poker table
     """
     starting_chips = 150
+    timeout = 5
 
     def __init__(self, username):
         self.username = username
@@ -24,7 +25,6 @@ class Player(object):
         self.is_dealer = False
         self.dealer = None
         self.players_list = []
-        self.timeout = 5 
         self.peers = [] # socket info of other players (used by main_peer)
         self.main_peer = None
         self.backup_peer = None # TODO
@@ -67,7 +67,7 @@ class Player(object):
         client_socket.send(pickle.dumps(data_to_send))
         # recieve ack
         ack = client_socket.recv(1024)
-        sys.stderr.write("ack recieved: " + str(pickle.loads(ack)) + "\n\n")
+        sys.stderr.write("ack recieved: " + str(pickle.loads(ack)) + "\n")
         # send req for game
         client_socket.send(pickle.dumps(req_data))
         sys.stderr.write("sent req for game" + "\n")
@@ -80,10 +80,11 @@ class Player(object):
         sys.stderr.write("sent ack" + "\n")
         # recv game data
         game_data = self.get_data(client_socket, recv_info["data_size_to_send"])
-        sys.stderr.write("got game data" + "\n\n")
+        sys.stderr.write("got game data" + "\n")
         
         if game_data["new_table"]:
             # player is "server", start "sever" for peers
+            sys.stderr.write("starting peer server" + "\n")
             self.start_server(game_data["host"], game_data["port"])
             # TODO: setup gamestate info
         else:
@@ -91,6 +92,7 @@ class Player(object):
             self.main_peer = socket.socket()
             self.main_peer.connect((game_data["host"], game_data["port"]))
     def play_game(self):
+        sys.stderr.write("beginning play game" + "\n\n")
         if self.is_dealer: #Sends dealers to another function
             self.deal_game()
         
@@ -120,7 +122,7 @@ class Player(object):
         # While (game not over)
             if len(self.players_list) < Dealer.MAXPLAYERS:
                 # check for new player
-                read_ready, _dummy, _dummy = select([self.main_peer], [], [], self.timeout)
+                read_ready, _dummy, _dummy = select([self.main_peer], [], [], Player.timeout)
                 if read_ready:
                     client, addr = self.main_peer.accept() # Establish connection with new client
                     sys.stderr.write('Got connection from: ' + str(addr) + str(client) + "\n\n")
@@ -131,18 +133,19 @@ class Player(object):
             # play round
     def deal_game(self):
         # TODO: d is moved to start_server and is now self.dealer
-        d = Dealer()
-        d.AddPlayers(self.players_list)
-        dealer_token = 0
+        # d = Dealer()
+        # d.AddPlayers(self.players_list)
+        # dealer_token = 0
         
-        while len(self.players_list) > 1:#Really should be as long as there are more than 1 players with money
-            dealer_token = (dealer_token + 1)%len(self.players_list)
-            d.DealHand(dealer_token)
+        # while len(self.players_list) > 1:#Really should be as long as there are more than 1 players with money
+            # dealer_token = (dealer_token + 1)%len(self.players_list)
+            # d.DealHand(dealer_token)
+        pass # TODO: REMOVE PASS ONCE CODE IS WRITTEN
     def start_server(self, host, port):
         self.is_dealer = True
         self.dealer = Dealer.Dealer()
         self.main_peer = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Create a socket object
-        self.main_peer.setblocking(0) # Non blocking
+        # self.main_peer.setblocking(0) # Non blocking
         self.main_peer.bind((host, port)) # Bind to the port given by server
         self.main_peer.listen(5) # Now wait for peer connection
         self.play_game()
