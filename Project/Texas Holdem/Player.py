@@ -117,13 +117,16 @@ class Player(object):
                 
             #Playing round
             if len(self.players_list) > 1:
+                sys.stderr.write("playing round" + "\n")
                 if self.is_dealer: #DEALER CODE
+                    sys.stderr.write("dealer doing his thing" + "\n")
                     d = Dealer.Dealer()
                     d.AddPlayers(self.players_list)
                     self.dealer_token = (self.dealer_token + 1)%len(self.players_list)
                     d.DealHand(self.dealer_token)
-                    self.play_game()
+                    # self.play_game()
                 else:
+                    sys.stderr.write("user " + "\n\n")
                     id_num = 0
                     while(id_num != 5): #PLAYER CODE
                         msg = pickle.loads(self.main_peer.recv(1024))
