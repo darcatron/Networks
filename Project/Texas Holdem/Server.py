@@ -98,10 +98,12 @@ class Server(object):
         if client_req["type"] == "play":
             sys.stderr.write('Got play request from ' + client_req["username"] + "\n\n")
             table_data = self.get_open_table(self.get_host(client_socket), client_req["username"])
-
+            sys.stderr.write("table_data returned: " + str(table_data) + "\n")
             if "new_table" not in table_data:
+                sys.stderr.write("added false to table_data" + "\n")
                 table_data["new_table"] = False
-            #del table_data["num_players"] # remove extra data SEAN
+            sys.stderr.write("updated table_data: " + str(table_data) + "\n\n")
+            del table_data["num_players"] # remove extra data
                 
             self.send_data(client_socket, table_data)
         elif client_req["type"] == "cash":
@@ -155,7 +157,8 @@ class Server(object):
         for table in self.tables:
             if table["num_players"] < Server.MAXPLAYERSPERTABLE:
                 table["num_players"] += 1
-                return table
+                sys.stderr.write("found open table: " + str(table) + "\n\n")
+                return dict(table)
         # no open tables, player will be "server"
         new_table = self.add_new_table(host, randint(8000, 9000))
         new_table["new_table"] = True
@@ -166,7 +169,7 @@ class Server(object):
                      "host" : host,
                      "port" : port}
         self.tables.append(new_table)
-        return new_table
+        return dict(new_table)
     def add_new_user(self, username):
         new_user = {"username" : username,
                     "num_chips" : 150,
