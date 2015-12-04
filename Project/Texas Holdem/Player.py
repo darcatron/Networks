@@ -153,6 +153,11 @@ class Player(object):
         # TODO: parse gamestate data and update self
         # TODO: look into pickle library to unserialize data
         pass
+    def send_gamestate(self):
+        # TODO: if player is server
+        # send gamestate to each player
+        # TODO: look into pickle library to serialize and send data
+        pass
     @staticmethod
     def get_data(connected_socket, num_bytes_to_receive):
         chunks = []
@@ -169,12 +174,6 @@ class Player(object):
             sys.stderr.write("recieved bytes: " + str(bytes_recvd) + "\n\n")
 
         return pickle.loads(''.join(chunks))
-    def send_gamestate(self):
-        # TODO: if player is server
-        # send gamestate to each player
-        # TODO: look into pickle library to serialize and send data
-        pass
-
 #pList = []
 #p = Player('Sean')
 #p.is_dealer=True

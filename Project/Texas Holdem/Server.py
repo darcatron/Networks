@@ -9,8 +9,8 @@ class Server(object):
     Server that adds players to games
      maintains user information
     """
-    timeout = 30 # seconds
     MAXPLAYERSPERTABLE = 5
+    timeout = 30 # seconds
 
     def __init__(self):
         self.users = [] # all poker players (offline or online)
@@ -28,12 +28,13 @@ class Server(object):
 
         while True:
             sys.stderr.write("active_sockets: " + str(self.active_sockets) + "\n\n")
+            sys.stderr.write("socket_infos: " + str(self.socket_infos) + "\n\n")
             read_ready, _dummy, _dummy = select(self.active_sockets, [], [], Server.timeout)
-            
+
             for s in read_ready:
                 if s is server_socket:
                     client, addr = server_socket.accept() # Establish connection with new client
-                    sys.stderr.write('Got connection from: ' + str(addr) + str(client) + "\n\n")
+                    sys.stderr.write('Got connection from: ' + str(addr) + " " + str(client) + "\n\n")
                     self.active_sockets.append(client)
                     self.socket_infos.append({"socket_number" : client,
                                                 "host" : addr[0],
@@ -57,9 +58,10 @@ class Server(object):
                             bytes_recvd += len(chunk)
                         self.handle_req(s, pickle.loads(''.join(chunks)))
                         #   remove s from active_sockets
-                        socket_index = self.get_index_of_socket(s)
+                        self.active_sockets.pop(self.active_sockets.index(s))
+                        socket_index = self.get_index_of_socket_info(s)
                         if socket_index >= 0:
-                            self.active_sockets.pop(socket_index)
+                            self.socket_infos.pop(socket_index)
                         else:
                             raise RuntimeError("s does not exist")
                     else:
@@ -73,20 +75,20 @@ class Server(object):
                         if sent == 0:
                             raise RuntimeError("socket connection broken")
     def data_to_recv(self, socket_num):
-        socket_index = self.get_index_of_socket(socket_num)
+        socket_index = self.get_index_of_socket_info(socket_num)
         if socket_index >= 0:
             # return value is >= 0 (bytes)
             return self.socket_infos[socket_index]["data_to_receive"]
 
         raise RuntimeError("socket_num does not exist!")
     def set_data_to_recv(self, socket_num, recv_size):
-        socket_index = self.get_index_of_socket(socket_num)
+        socket_index = self.get_index_of_socket_info(socket_num)
         if socket_index >= 0:
             self.socket_infos[socket_index]["data_to_receive"] = recv_size
             return
 
         raise RuntimeError("socket_num does not exist!")
-    def get_index_of_socket(self, socket_num):
+    def get_index_of_socket_info(self, socket_num):
         for index, connected_socket in enumerate(self.socket_infos):
             if connected_socket["socket_number"] is socket_num:
                 return index
@@ -104,22 +106,21 @@ class Server(object):
             self.send_data(client_socket, table_data)
         elif client_req["type"] == "cash":
             # TODO
-            sys.stderr.write('Got cash out request from ' + client_req["username"])
+            sys.stderr.write('Got cash out request from ' + client_req["username"] + "\n\n")
         elif client_req["type"] == "buy":
             # TODO
-            sys.stderr.write('Got buy chips request from ' + client_req["username"])
+            sys.stderr.write('Got buy chips request from ' + client_req["username"] + "\n\n")
         else:
             # TODO: handle bad req
             sys.stderr.write("bad req!" + "\n\n")
 
-        sys.stderr.write("closing socket " + str(client_socket))
+        sys.stderr.write("closing socket " + str(client_socket) + "\n\n")
         client_socket.close() # Close the connection
     def get_host(self, client_socket):
-        socket_index = self.get_index_of_socket(client_socket)
+        socket_index = self.get_index_of_socket_info(client_socket)
         return self.socket_infos[socket_index]["host"]            
     @staticmethod
     def send_data(client_socket, data_to_send):
-        # TODO
         sys.stderr.write("trying to send" + str(data_to_send) + "\n\n")
         # set up transmission size data
         data_to_send = pickle.dumps(data_to_send)
@@ -141,14 +142,14 @@ class Server(object):
 
         while totalsent < data_size_info["data_size_to_send"]:
             sent = client_socket.send(data_to_send[totalsent:])
-            sys.stderr.write("sent " + str(sent) + " bytes to socket " + str(client_socket))
+            sys.stderr.write("sent " + str(sent) + " bytes to socket " + str(client_socket) + "\n\n")
             if sent == 0:
                 raise RuntimeError("socket connection broken")
             totalsent += sent
     def get_open_table(self, host, username):
         sys.stderr.write("trying to find table" + "\n\n")
         if username not in [p["username"] for p in self.users]:
-            self.create_new_user(username)
+            self.add_new_user(username)
             sys.stderr.write("created new user" + "\n\n")
         
         for table in self.tables:
@@ -156,25 +157,26 @@ class Server(object):
                 table["num_players"] += 1
                 return table
         # no open tables, player will be "server"
-        port = randint(8000, 9000)
+        new_table = self.add_new_table(host, randint(8000, 9000))
+        new_table["new_table"] = True
+        # user will be assigned a port to start the "server" on
+        return new_table
+    def add_new_table(self, host, port):
         new_table = {"num_players" : 1,
                      "host" : host,
                      "port" : port}
         self.tables.append(new_table)
-        new_table["new_table"] = True
-        # send user a port they should start the "server" on and keep track of it
         return new_table
-    def create_new_table(self, ip_address, port):
-        pass
-    def create_new_user(self, username):
+    def add_new_user(self, username):
         new_user = {"username" : username,
                     "num_chips" : 150,
                     "last_table" : -1}
 
         self.users.append(new_user)
+        return new_user
     def cash_out(self, client):
         # TODO: print the value they earned and remove their user information
-        client.close() # Close the connection
+        pass
     def buy_chips(self, amount):
         pass
 
