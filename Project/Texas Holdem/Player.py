@@ -30,16 +30,15 @@ class Player(object):
         self.backup_peer = None # TODO
         
         # game info
+        self.dealer_token = 0
         self.hand = None
         self.chips = Player.starting_chips
         self.made_move_this_turn = False
         self.has_folded = False
         self.chips_in_pot = 0
         self.chips_in_pot_this_turn = 0
-    def add_players(self, players):#Temporary Function
-        # TODO: maybe just have this function take in a player name and 
-        #       add it to the list rather than overwrite the list
-        self.players_list = players
+    def add_player(self, player):
+        self.players_list.append(player)
     def bet(self, amount): # TODO: NEED TO ADD ERROR CONDITIONS AND ALL IN SPLIT POT
         if amount < self.chips:
             self.chips -= amount
@@ -93,11 +92,30 @@ class Player(object):
             self.main_peer.connect((game_data["host"], game_data["port"]))
     def play_game(self):
         sys.stderr.write("beginning play game" + "\n\n")
-        if self.is_dealer: #Sends dealers to another function
-            self.deal_game()
-        
+
+        # While (game not over)
+        if len(self.players_list) < Dealer.MAXPLAYERS:
+                # check for new player
+            read_ready, _dummy, _dummy = select([self.main_peer], [], [], Player.timeout)
+            if read_ready:
+                client, addr = self.main_peer.accept() # Establish connection with new client
+                sys.stderr.write('Got connection from: ' + str(addr) + str(client) + "\n\n")
+                    # get username and starting chip value from new player
+                client_data = pickle.loads(client.recv(1024))
+                sys.stderr.write("recvd req: " + str(client_data) + "\n\n")
+                    # TODO: add player
+                self.add_player(Player("USERNAME?"))
+            
+        #Playing round
+        if self.is_dealer: #DEALER CODE
+            d = Dealer()
+            #d.AddPlayers(self.players_list)
+            dealer_token = (dealer_token + 1)%len(self.players_list)
+            d.DealHand(dealer_token)
+            self.play_game()
+            
         id_num = 0
-        while(id_num != 5):
+        while(id_num != 5): #PLAYER CODE
             msg = pickle.loads(self.main_peer.recv(1024))
             id_num = msg["id"]
             if id_num == 1: #Print
@@ -119,28 +137,13 @@ class Player(object):
             elif id_num == 5:
                 print msg["print"]                                                                                        
 
-        # While (game not over)
-            if len(self.players_list) < Dealer.MAXPLAYERS:
-                # check for new player
-                read_ready, _dummy, _dummy = select([self.main_peer], [], [], Player.timeout)
-                if read_ready:
-                    client, addr = self.main_peer.accept() # Establish connection with new client
-                    sys.stderr.write('Got connection from: ' + str(addr) + str(client) + "\n\n")
-                    # get username and starting chip value from new player
-                    client_data = pickle.loads(client.recv(1024))
-                    sys.stderr.write("recvd req: " + str(client_data) + "\n\n")
-                    # TODO: add player
-            # play round
-    def deal_game(self):
-        # TODO: d is moved to start_server and is now self.dealer
-        # d = Dealer()
-        # d.AddPlayers(self.players_list)
-        # dealer_token = 0
-        
-        # while len(self.players_list) > 1:#Really should be as long as there are more than 1 players with money
-            # dealer_token = (dealer_token + 1)%len(self.players_list)
-            # d.DealHand(dealer_token)
-        pass # TODO: REMOVE PASS ONCE CODE IS WRITTEN
+            
+        #Leave function if have 0 chips left
+        if self.chips <= 0:
+            print "You have no chips. Please purchase more chips to continue playing."
+        else:
+            play_game()
+
     def start_server(self, host, port):
         self.is_dealer = True
         self.dealer = Dealer.Dealer()

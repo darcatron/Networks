@@ -124,7 +124,7 @@ class Dealer(object):
                         move = raw_input('Fold (F), Call (C), or Raise (R-numChips)? ')
                         response = pickle.loads(pickle.dumps({"id" : 4, "move" : move}))#For consistency
                     else:
-                        self.players[turn].my_socket.send(pickle.dump({"id" : 3, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "curr_bet" : toPay - self.players[turn].chips_in_pot_this_turn, "pot" : self.TotalPot()}))
+                        self.players[turn].my_socket.send(pickle.dumps({"id" : 3, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "curr_bet" : toPay - self.players[turn].chips_in_pot_this_turn, "pot" : self.TotalPot()}))
                         response = pickle.loads(self.players[turn].recv(1024))
                 else:
                     if self.players[turn].is_dealer:
@@ -132,7 +132,7 @@ class Dealer(object):
                         move = raw_input('Fold (F), Check (C), or Bet (B-numChips)? ')
                         response = pickle.loads(pickle.dumps({"id" : 4, "move" : move}))#For consistency
                     else:
-                        self.players[turn].my_socket.send(pickle.dump({"id" : 2, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "pot" : self.TotalPot()}))
+                        self.players[turn].my_socket.send(pickle.dumps({"id" : 2, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "pot" : self.TotalPot()}))
                         response = pickle.loads(self.players[turn].recv(1024))
                         
                 self.players[turn].made_move_this_turn = True
@@ -146,8 +146,9 @@ class Dealer(object):
                         move = raw_input('Fold (F), Call (C), or Raise (R-numChips)? ')
                         response = pickle.loads(pickle.dumps({"id" : 4, "move" : move}))#For consistency
                     else:
-                        self.players[turn].my_socket.send(pickle.dump({"id" : 3, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "curr_bet" : toPay - self.players[turn].chips_in_pot_this_turn, "pot" : self.TotalPot()}))
+                        self.players[turn].my_socket.send(pickle.dumps({"id" : 3, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "curr_bet" : toPay - self.players[turn].chips_in_pot_this_turn, "pot" : self.TotalPot()}))
                         response = pickle.loads(self.players[turn].recv(1024))
+
                 else:
                     roundOver = True  #If player has already moved, but has nothing to bet
                                            #Then the round is neccesarily over
@@ -215,6 +216,7 @@ class Dealer(object):
             self.RankedVictory()
 
         self.ResetHands()
+        return
 
     def isGameOver(self):
         total = 0
