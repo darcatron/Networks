@@ -177,12 +177,3 @@ class Player(object):
             sys.stderr.write("recieved bytes: " + str(bytes_recvd) + "\n\n")
 
         return pickle.loads(''.join(chunks))
-#pList = []
-#p = Player('Sean')
-#p.is_dealer=True
-#pList.append(p)
-#pList.append(Player('Bob'))
-#pList.append(Player('Test'))
-#pList.append(Player('Blah'))
-#pList[0].add_players(pList)
-#pList[0].play_game()

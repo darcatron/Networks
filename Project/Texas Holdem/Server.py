@@ -101,7 +101,7 @@ class Server(object):
 
             if "new_table" not in table_data:
                 table_data["new_table"] = False
-            del table_data["num_players"] # remove extra data
+            #del table_data["num_players"] # remove extra data SEAN
                 
             self.send_data(client_socket, table_data)
         elif client_req["type"] == "cash":
