@@ -127,7 +127,6 @@ class Player(object):
                     d.AddPlayers(self.players_list)
                     self.dealer_token = (self.dealer_token + 1)%len(self.players_list)
                     d.DealHand(self.dealer_token)
-
                 else:
                     print "The hand has started."
                     id_num = 0

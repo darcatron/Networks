@@ -1,0 +1,10 @@
+
+Pinging mit.edu [69.192.206.184] with 56 bytes of data:
+Reply from 69.192.206.184: bytes=56 time=72ms TTL=57
+
+Ping statistics for 69.192.206.184:
+    Packets: Sent = 1, Received = 1, Lost = 0 (0% loss),
+Approximate round trip times in milli-seconds:
+    Minimum = 72ms, Maximum = 72ms, Average = 72ms
+TTTT
+ping mit.edu -n 1
