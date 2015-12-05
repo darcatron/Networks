@@ -4,7 +4,11 @@
      1 person comes back
      a few people come back
      everyone comes back
-
-   will need to store player info on disk or at least have a way to mimick a "server failure"
-
-   Maybe have some sort of user authentication with ip address or password?  
+todo:
+   have a way to mimick a "server failure"
+   if main peer d/cs, server should know and remove table from db and peers should d/c from main peer and be told of the d/c
+   if peer d/cs, main peer should know and should take it as a fold. Once round is over, main peer will update_server and should remove player from players_list
+   write extensive readme
+issue:
+   server remembers old table even if peer d/c
+   poker prints out "Waiting on ___'s turn" twice

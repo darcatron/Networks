@@ -103,6 +103,7 @@ class Server(object):
             if "new_table" not in table_data:
                 sys.stderr.write("added false to table_data" + "\n")
                 table_data["new_table"] = False
+            table_data["num_chips"] = self.get_num_chips(client_req["username"])
             sys.stderr.write("updated table_data: " + str(table_data) + "\n\n")
             del table_data["num_players"] # remove extra data
                 
@@ -170,6 +171,10 @@ class Server(object):
         new_table["new_table"] = True
         # user will be assigned a port to start the "server" on
         return new_table
+    def get_num_chips(self, username):
+        for user in self.users:
+            if user["username"] == username:
+                return user["num_chips"]
     def add_new_table(self, host, port):
         new_table = {"num_players" : 1,
                      "host" : host,

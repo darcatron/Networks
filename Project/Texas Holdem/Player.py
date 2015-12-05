@@ -16,7 +16,6 @@ class Player(object):
     Information and possible actions of user 
      that is sitting in a poker table
     """
-    starting_chips = 150
     timeout = 5
     MAXPLAYERS = 5
 
@@ -39,7 +38,7 @@ class Player(object):
         self.dealer_token = 0
         self.hand = None
         # TODO: fix this so that it's based off what the player says in data
-        self.chips = Player.starting_chips
+        self.chips = 0
         self.made_move_this_turn = False
         self.has_folded = False
         self.chips_in_pot = 0
@@ -49,10 +48,10 @@ class Player(object):
     def bet(self, amount): # TODO: NEED TO ADD ERROR CONDITIONS AND ALL IN SPLIT POT
         if amount < self.chips:
             self.chips -= amount
-            self.chips_in_pot += amount # TODO: shouldn't be for player
-            self.chips_in_pot_this_turn += amount # TODO: chips player put in??
+            self.chips_in_pot += amount
+            self.chips_in_pot_this_turn += amount
         elif self.chips <= 0: # TODO: return None?
-            None # Stops player from betting more, or remove player from the game
+            return None # Stops player from betting more, or remove player from the game
         else:# ALL IN CONDITION
             self.chips_in_pot += self.chips
             self.chips = 0
@@ -89,6 +88,7 @@ class Player(object):
         sys.stderr.write("sent ack" + "\n")
         # recv game data
         game_data = self.get_data(client_socket, recv_info["data_size_to_send"])
+        self.chips = game_data["num_chips"] # reload chips
         sys.stderr.write("got game data" + "\n")
         
         if game_data["new_table"]:
@@ -96,7 +96,6 @@ class Player(object):
             sys.stderr.write("starting peer server" + "\n")
             self.table_host = game_data["host"]
             self.start_server(game_data["port"])
-            # TODO: setup gamestate info
         else:
             # connect to peer
             self.main_peer = socket.socket()
@@ -107,9 +106,10 @@ class Player(object):
         print "Waiting to join game"
 
         while(True):
-            # TODO: find a way to check if player has d/c from game (timeout when waiting for move)
-            # TODO: send table update to server
-            self.update_server()
+            # TODO: find a way to check if player has d/c from game within Dealer
+            #       if d/c send a lower value for update_server(num_players)
+            #       then remove player from players_list
+            self.update_server(len(self.players_list))
             if self.is_dealer and len(self.players_list) < Player.MAXPLAYERS:
                 # check for new player
                 if self not in self.players_list: #NEW LINES
@@ -122,7 +122,6 @@ class Player(object):
                     client_data = pickle.loads(client.recv(1024))
                     sys.stderr.write("recvd req: " + str(client_data) + "\n\n")
                     
-                    # TODO: add player
                     p = Player(client_data["username"])
                     p.recv_socket = client
                     p.chips = client_data["num_chips"]
@@ -182,7 +181,7 @@ class Player(object):
         self.main_peer.bind((self.table_host, port)) # Bind to the port given by server
         self.main_peer.listen(5) # Now wait for peer connection
         self.play_game()
-    def update_server(self):
+    def update_server(self, num_players):
         # get game data
         player_data = []
 
@@ -196,7 +195,7 @@ class Player(object):
         # create req for update
         req_data = {"type" : "update", 
                     "host" : self.table_host,
-                    "num_players" : len(self.players_list),
+                    "num_players" : num_players,
                     "player_data" : player_data}
         data_to_send = {"data_size_to_send" : len(pickle.dumps(req_data))}
         # send notification that sending will start
