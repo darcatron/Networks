@@ -95,11 +95,23 @@ class Dealer(object):
         else:
             #Edge Case. Not accounted for in messages
             self.SendMessageToAll(-1, pickle.dumps({"id" : 5, "print" : self.players[winners[0]].username + " wins with " + class_string}))
-    def dealer_index(self):
-        for p in self.players:
-            if p.is_dealer:
-                return players.index(p)
-        
+            
+    #def dealer_index(self):
+#        for p in self.players:
+#            if p.is_dealer:
+#                return players.index(p)
+
+    def MoveOutput(self, turn, move):
+        if move == 'F':
+            self.SendMessageToAll(turn, pickle.dumps({"id" : 1, "print" : self.players[turn].username + " folded"}))
+        elif move == 'C':
+            self.SendMessageToAll(turn, pickle.dumps({"id" : 1, "print" : self.players[turn].username + " called"}))
+        elif move == 'CH':
+            self.SendMessageToAll(turn, pickle.dumps({"id" : 1, "print" : self.players[turn].username + " checked"}))
+        elif move[0] == 'R':
+            self.SendMessageToAll(turn, pickle.dumps({"id" : 1, "print" : self.players[turn].username + " raised by " + move[2:]}))
+        elif move[0] == 'B':
+            self.SendMessageToAll(turn, pickle.dumps({"id" : 1, "print" : self.players[turn].username + " bet " + move[2:]}))
 
     def Bets(self,startingPlayer, startingAmount):
         turn = startingPlayer
@@ -114,7 +126,7 @@ class Dealer(object):
             if(self.players[turn].has_folded):
                 None
             elif not((self.players[turn].made_move_this_turn)):
-
+                self.SendMessageToAll(turn, pickle.dumps({"id" : 1, "print" : "Waiting on " + self.players[turn].username + "'s turn."}))
                 if self.players[turn].is_dealer:
                     if self.board:
                         Card.print_pretty_cards(self.board)
@@ -131,7 +143,7 @@ class Dealer(object):
                 else:
                     if self.players[turn].is_dealer:
                         print 'Pot size is: %d. You have %d remaining chips' % (self.TotalPot(), self.players[turn].chips)
-                        move = raw_input('Fold (F), Check (C), or Bet (B-numChips)? ')
+                        move = raw_input('Fold (F), Check (CH), or Bet (B-numChips)? ')
                         response = pickle.loads(pickle.dumps({"id" : 4, "move" : move}))#For consistency
                     else:
                         self.players[turn].recv_socket.send(pickle.dumps({"id" : 2, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "pot" : self.TotalPot()}))
@@ -139,6 +151,7 @@ class Dealer(object):
                         
                 self.players[turn].made_move_this_turn = True
             else:
+                self.SendMessageToAll(turn, pickle.dumps({"id" : 1, "print" : "Waiting on " + self.players[turn].username + "'s turn."}))
                 if self.players[turn].chips_in_pot_this_turn < toPay:
                     if self.players[turn].is_dealer:
                         if self.board:
@@ -156,29 +169,43 @@ class Dealer(object):
                 else:
                     roundOver = True  #If player has already moved, but has nothing to bet
                                            #Then the round is neccesarily over
-            if response["move"] == 'F':
-                self.players[turn].has_folded = True
-                roundOver = self.LastFolded()
-            elif response["move"] == 'C':
-                self.players[turn].bet(toPay-self.players[turn].chips_in_pot_this_turn)
-                
-            elif response["move"][0] == 'R':
-                increase = int(response["move"][2:])
-                toPay += increase - (toPay - self.players[turn].chips_in_pot_this_turn)
-                self.players[turn].bet(increase)
-            elif response["move"][0] == 'B':
-                increase = int(response["move"][2:])
-                toPay += increase
-                self.players[turn].bet(increase)
-            elif response["move"] == 'N':
-                continue
 
-            print "Going to Send ALL. Turn is %d" % turn
-            self.SendMessageToAll(turn, pickle.dumps({"id" : 1, "print" : self.players[turn].username + " " + response["move"]}))
-            response["move"]='N'
+            #Handling user input
+            response_invalid = True
+            while response_invalid:
+                if response["move"] == 'F':
+                    self.players[turn].has_folded = True
+                    roundOver = self.LastFolded()
+                    response_invalid = False
+                elif response["move"] == 'C' or response["move"] == 'CH':
+                    self.players[turn].bet(toPay-self.players[turn].chips_in_pot_this_turn)
+                    response_invalid = False
+                elif (len(response["move"]) >= 3) and response["move"][0] == 'R':
+                    increase = int(response["move"][2:])
+                    if increase <= self.players[turn].chips:
+                        toPay += increase - (toPay - self.players[turn].chips_in_pot_this_turn)
+                        self.players[turn].bet(increase)
+                        response_invalid = False
+                elif (len(response["move"]) >= 3) and response["move"][0] == 'B':
+                    increase = int(response["move"][2:])
+                    if increase <= self.players[turn].chips:
+                        toPay += increase
+                        self.players[turn].bet(increase)
+                        response_invalid = False
+                elif response["move"] == 'NA': #bug fix
+                    break
+                if response_invalid:
+                    if self.players[turn].is_dealer:
+                        move = raw_input('Wrong input format. Please enter again: ')
+                        response = pickle.loads(pickle.dumps({"id" : 4, "move" : move}))
+                    else:
+                        self.players[turn].recv_socket.send(pickle.dumps({"id" : 6}))
+                        response = pickle.loads(self.players[turn].recv_socket.recv(1024))
+                                                    
+            self.MoveOutput(turn, response["move"])
+            response["move"]='NA'
             
             turn = (turn+1)%len(self.players)
-            #print "%d" % turn
             
         for p in self.players:
             p.chips_in_pot_this_turn = 0
