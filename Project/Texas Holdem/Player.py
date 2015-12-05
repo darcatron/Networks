@@ -28,13 +28,17 @@ class Player(object):
         self.dealer = None
         self.players_list = []
         self.peers = [] # socket info of other players (used by main_peer)
-        self.main_peer = None
+        self.main_peer = None # socket connection
+        self.table_host = None # player who is hosting the table
         self.backup_peer = None # TODO
         self.recv_socket = None #For dealer, this is socket to send to this player
-        
+        self.server_host = None # Poker server
+        self.server_port = None 
+
         # game info
         self.dealer_token = 0
         self.hand = None
+        # TODO: fix this so that it's based off what the player says in data
         self.chips = Player.starting_chips
         self.made_move_this_turn = False
         self.has_folded = False
@@ -58,10 +62,13 @@ class Player(object):
         self.has_folded = False
         self.chips_in_pot = 0
         self.chips_in_pot_this_turn = 0
-    def find_game(self, server_port):
+    def find_game(self, server_port, host=None):
         # connect to poker server
+        if host == None:
+            host = socket.gethostname()
+        self.server_host, self.server_port = host, server_port
         client_socket = socket.socket()
-        client_socket.connect((socket.gethostname(), server_port))
+        client_socket.connect((host, server_port))
         # create req for game
         req_data = {"type" : "play", "username" : self.username}
         data_to_send = {"data_size_to_send" : len(pickle.dumps(req_data))}
@@ -87,7 +94,8 @@ class Player(object):
         if game_data["new_table"]:
             # player is "server", start "sever" for peers
             sys.stderr.write("starting peer server" + "\n")
-            self.start_server(game_data["host"], game_data["port"])
+            self.table_host = game_data["host"]
+            self.start_server(game_data["port"])
             # TODO: setup gamestate info
         else:
             # connect to peer
@@ -95,11 +103,13 @@ class Player(object):
             self.main_peer.connect((game_data["host"], game_data["port"]))
             self.main_peer.send(pickle.dumps({"username" : self.username, "num_chips" : self.chips}))
             self.play_game()
-
     def play_game(self):
         print "Waiting to join game"
 
         while(True):
+            # TODO: find a way to check if player has d/c from game (timeout when waiting for move)
+            # TODO: send table update to server
+            self.update_server()
             if self.is_dealer and len(self.players_list) < Player.MAXPLAYERS:
                 # check for new player
                 if self not in self.players_list: #NEW LINES
@@ -158,31 +168,53 @@ class Player(object):
                             self.main_peer.send(pickle.dumps({"id" : 4, "move" : move}))
                         else:
                             continue
-                        id_num = 0
-    
+                        id_num = 0    
                 
             #Leave function if have 0 chips left
             if self.chips <= 0:
                 print "You have no chips. Please purchase more chips to continue playing."
                 return
-    
-    def start_server(self, host, port):
+    def start_server(self, port):
         self.is_dealer = True
         self.dealer = Dealer.Dealer()
         self.main_peer = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Create a socket object
         # self.main_peer.setblocking(0) # Non blocking
-        self.main_peer.bind((host, port)) # Bind to the port given by server
+        self.main_peer.bind((self.table_host, port)) # Bind to the port given by server
         self.main_peer.listen(5) # Now wait for peer connection
         self.play_game()
-    def get_gamestate(self):
-        # TODO: parse gamestate data and update self
-        # TODO: look into pickle library to unserialize data
-        pass
-    def send_gamestate(self):
-        # TODO: if player is server
-        # send gamestate to each player
-        # TODO: look into pickle library to serialize and send data
-        pass
+    def update_server(self):
+        # get game data
+        player_data = []
+
+        for p in self.players_list:
+            player_data.append({"username" : p.username, 
+                                "num_chips" : p.chips})
+
+        # connect to poker server
+        client_socket = socket.socket()
+        client_socket.connect((self.server_host, self.server_port))
+        # create req for update
+        req_data = {"type" : "update", 
+                    "host" : self.table_host,
+                    "num_players" : len(self.players_list),
+                    "player_data" : player_data}
+        data_to_send = {"data_size_to_send" : len(pickle.dumps(req_data))}
+        # send notification that sending will start
+        client_socket.send(pickle.dumps(data_to_send))
+        # recieve ack
+        ack = client_socket.recv(1024)
+        sys.stderr.write("ack recieved: " + str(pickle.loads(ack)) + "\n")
+        # send game data
+        req_data = pickle.dumps(req_data)
+        totalsent = 0
+
+        while totalsent < data_to_send["data_size_to_send"]:
+            sent = client_socket.send(req_data[totalsent:])
+            sys.stderr.write("sent " + str(sent) + " bytes to socket " + str(client_socket) + "\n\n")
+            if sent == 0:
+                raise RuntimeError("socket connection broken")
+            totalsent += sent
+        sys.stderr.write("sent game update" + "\n")
     @staticmethod
     def get_data(connected_socket, num_bytes_to_receive):
         chunks = []
@@ -199,6 +231,7 @@ class Player(object):
             sys.stderr.write("recieved bytes: " + str(bytes_recvd) + "\n\n")
 
         return pickle.loads(''.join(chunks))
+
 #pList = []
 #p = Player('Sean')
 #p.is_dealer=True

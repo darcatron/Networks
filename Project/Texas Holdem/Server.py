@@ -18,6 +18,7 @@ class Server(object):
         self.active_sockets = [] # sockets to read from
         self.socket_infos = [] # info about each connected client
     def start(self, port):
+        # TODO: add mimic_down on d keystroke
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Create a socket object
         server_socket.setblocking(0) # Non blocking
         host = socket.gethostname() # Get local machine name
@@ -112,6 +113,11 @@ class Server(object):
         elif client_req["type"] == "buy":
             # TODO
             sys.stderr.write('Got buy chips request from ' + client_req["username"] + "\n\n")
+        elif client_req["type"] == "update":
+            sys.stderr.write("Got update req from " + str(client_req["host"]) + "\n\n")
+            self.update_info(client_req)
+            sys.stderr.write("new users: " + str(self.users) + "\n\n")
+            sys.stderr.write("new tables: " + str(self.tables) + "\n\n")
         else:
             # TODO: handle bad req
             sys.stderr.write("bad req!" + "\n\n")
@@ -172,15 +178,28 @@ class Server(object):
         return dict(new_table)
     def add_new_user(self, username):
         new_user = {"username" : username,
-                    "num_chips" : 150,
-                    "last_table" : -1}
+                    "num_chips" : 150}
 
         self.users.append(new_user)
         return new_user
-    def cash_out(self, client):
+    def cash_out(self, username):
         # TODO: print the value they earned and remove their user information
+        # self.update_chips(username, 0)
         pass
-    def buy_chips(self, amount):
-        pass
-
+    def buy_chips(self, username, amount):
+        self.update_chips(username, amount)
+    def update_chips(self, username, new_num_chips):
+        for user in self.users:
+            if user["username"] == username:
+                user["num_chips"] = new_num_chips
+                return
+    def update_info(self, updated_info):
+        # update table entry
+        for table in self.tables:
+            if table["host"] == updated_info["host"]:
+                table["num_players"] = updated_info["num_players"]
+                break
+        # update each player
+        for player in updated_info["player_data"]:
+            self.update_chips(player["username"], player["num_chips"])
 
