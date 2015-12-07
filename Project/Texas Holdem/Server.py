@@ -122,6 +122,7 @@ class Server(object):
         elif client_req["type"] == "game_down":
             sys.stderr.write("Got game down req on table with host " + str(client_req["host"]) + "\n\n")
             self.remove_table(client_req["host"])
+            sys.stderr.write("tables are now: " + str(self.tables) + "\n\n")
         else:
             # TODO: handle bad req
             sys.stderr.write("bad req!" + "\n\n")
@@ -187,8 +188,7 @@ class Server(object):
     def remove_table(self, host):
         for index, table in enumerate(self.tables):
             if table["host"] == host:
-                break 
-        return self.tables.pop(index)
+                return self.tables.pop(index) 
     def add_new_user(self, username):
         new_user = {"username" : username,
                     "num_chips" : 150}
