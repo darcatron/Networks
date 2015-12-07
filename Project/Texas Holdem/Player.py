@@ -98,10 +98,15 @@ class Player(object):
             self.start_server(game_data["port"])
         else:
             # connect to peer
-            self.main_peer = socket.socket()
-            self.main_peer.connect((self.table_host, game_data["port"]))
-            self.main_peer.send(pickle.dumps({"username" : self.username, "num_chips" : self.chips}))
-            self.play_game()
+            try:
+                self.main_peer = socket.socket()
+                self.main_peer.connect((self.table_host, game_data["port"]))
+                self.main_peer.send(pickle.dumps({"username" : self.username, "num_chips" : self.chips}))
+                self.play_game()
+            except:
+                sys.stderr.write("could not connect to table!" + "\n\n")
+                self.update_server()
+                self.find_game(server_port, host)
     def play_game(self):
         print "Waiting to join game"
 
@@ -181,7 +186,7 @@ class Player(object):
         self.main_peer.bind((self.table_host, port)) # Bind to the port given by server
         self.main_peer.listen(5) # Now wait for peer connection
         self.play_game()
-    def update_server(self, num_players):
+    def update_server(self, num_players=None):
         # create req for update    
         req_data = {"host" : self.table_host}
 
@@ -201,7 +206,6 @@ class Player(object):
         # connect to poker server
         client_socket = socket.socket()
         client_socket.connect((self.server_host, self.server_port))
-        
         # send notification that sending will start
         data_to_send = {"data_size_to_send" : len(pickle.dumps(req_data))}
         client_socket.send(pickle.dumps(data_to_send))
