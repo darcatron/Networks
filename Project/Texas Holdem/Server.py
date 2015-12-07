@@ -114,11 +114,14 @@ class Server(object):
         elif client_req["type"] == "buy":
             # TODO
             sys.stderr.write('Got buy chips request from ' + client_req["username"] + "\n\n")
-        elif client_req["type"] == "update":
+        elif client_req["type"] == "game_update":
             sys.stderr.write("Got update req from " + str(client_req["host"]) + "\n\n")
             self.update_info(client_req)
             sys.stderr.write("new users: " + str(self.users) + "\n\n")
             sys.stderr.write("new tables: " + str(self.tables) + "\n\n")
+        elif client_req["type"] == "game_down":
+            sys.stderr.write("Got game down req on table with host " + str(client_req["host"]) + "\n\n")
+            self.remove_table(client_req["host"])
         else:
             # TODO: handle bad req
             sys.stderr.write("bad req!" + "\n\n")
@@ -181,6 +184,11 @@ class Server(object):
                      "port" : port}
         self.tables.append(new_table)
         return dict(new_table)
+    def remove_table(self, host):
+        for index, table in enumerate(self.tables):
+            if table["host"] == host:
+                break 
+        return self.tables.pop(index)
     def add_new_user(self, username):
         new_user = {"username" : username,
                     "num_chips" : 150}

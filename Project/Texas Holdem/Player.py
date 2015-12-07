@@ -89,17 +89,17 @@ class Player(object):
         # recv game data
         game_data = self.get_data(client_socket, recv_info["data_size_to_send"])
         self.chips = game_data["num_chips"] # reload chips
+        self.table_host = game_data["host"] # set table host
         sys.stderr.write("got game data" + "\n")
         
         if game_data["new_table"]:
             # player is "server", start "sever" for peers
             sys.stderr.write("starting peer server" + "\n")
-            self.table_host = game_data["host"]
             self.start_server(game_data["port"])
         else:
             # connect to peer
             self.main_peer = socket.socket()
-            self.main_peer.connect((game_data["host"], game_data["port"]))
+            self.main_peer.connect((self.table_host, game_data["port"]))
             self.main_peer.send(pickle.dumps({"username" : self.username, "num_chips" : self.chips}))
             self.play_game()
     def play_game(self):
@@ -182,23 +182,28 @@ class Player(object):
         self.main_peer.listen(5) # Now wait for peer connection
         self.play_game()
     def update_server(self, num_players):
-        # get game data
-        player_data = []
+        # create req for update    
+        req_data = {"host" : self.table_host}
 
-        for p in self.players_list:
-            player_data.append({"username" : p.username, 
-                                "num_chips" : p.chips})
+        if self.is_dealer:
+            # get game data
+            player_data = []
+
+            for p in self.players_list:
+                player_data.append({"username" : p.username, 
+                                    "num_chips" : p.chips})
+            req_data["type"] = "game_update"
+            req_data["num_players"] = num_players
+            req_data["player_data"] = player_data
+        else:
+            req_data["type"] = "game_down"
 
         # connect to poker server
         client_socket = socket.socket()
         client_socket.connect((self.server_host, self.server_port))
-        # create req for update
-        req_data = {"type" : "update", 
-                    "host" : self.table_host,
-                    "num_players" : num_players,
-                    "player_data" : player_data}
-        data_to_send = {"data_size_to_send" : len(pickle.dumps(req_data))}
+        
         # send notification that sending will start
+        data_to_send = {"data_size_to_send" : len(pickle.dumps(req_data))}
         client_socket.send(pickle.dumps(data_to_send))
         # recieve ack
         ack = client_socket.recv(1024)
@@ -213,7 +218,7 @@ class Player(object):
             if sent == 0:
                 raise RuntimeError("socket connection broken")
             totalsent += sent
-        sys.stderr.write("sent game update" + "\n")
+        sys.stderr.write("sent status update" + "\n")
     @staticmethod
     def get_data(connected_socket, num_bytes_to_receive):
         chunks = []
