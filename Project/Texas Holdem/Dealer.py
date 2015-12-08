@@ -96,14 +96,13 @@ class Dealer(object):
             #Edge Case. Not accounted for in messages
             self.SendMessageToAll(-1, pickle.dumps({"id" : 5, "print" : self.players[winners[0]].username + " wins with " + class_string}))
             
-    #def dealer_index(self):
-#        for p in self.players:
-#            if p.is_dealer:
-#                return players.index(p)
+    def removePlayer(self, turn):
+        self.players[turn].disconnected = True
+        return pickle.loads(pickle.dumps({"id" : 4, "move" : "F"}))
 
     def MoveOutput(self, turn, move):
         if move == 'F':
-            self.SendMessageToAll(turn, pickle.dumps({"id" : 1, "print" : self.players[turn].username + " folded"}))
+            self.SendMessageToAll(turn, pickle. dumps({"id" : 1, "print" : self.players[turn].username + " folded"}))
         elif move == 'C':
             self.SendMessageToAll(turn, pickle.dumps({"id" : 1, "print" : self.players[turn].username + " called"}))
         elif move == 'CH':
@@ -139,7 +138,11 @@ class Dealer(object):
                         response = pickle.loads(pickle.dumps({"id" : 4, "move" : move}))#For consistency
                     else:
                         self.players[turn].recv_socket.send(pickle.dumps({"id" : 3, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "curr_bet" : toPay - self.players[turn].chips_in_pot_this_turn, "pot" : self.TotalPot()}))
-                        response = pickle.loads(self.players[turn].recv_socket.recv(1024))
+                        receiver_response = self.players[turn].recv_socket.recv(1024)
+                        if receiver_response == "":
+                            response = self.removePlayer(turn)
+                        else:
+                            response = pickle.loads(receiver_response)
                 else:
                     if self.players[turn].is_dealer:
                         print 'Pot size is: %d. You have %d remaining chips' % (self.TotalPot(), self.players[turn].chips)
@@ -147,7 +150,11 @@ class Dealer(object):
                         response = pickle.loads(pickle.dumps({"id" : 4, "move" : move}))#For consistency
                     else:
                         self.players[turn].recv_socket.send(pickle.dumps({"id" : 2, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "pot" : self.TotalPot()}))
-                        response = pickle.loads(self.players[turn].recv_socket.recv(1024))
+                        receiver_response = self.players[turn].recv_socket.recv(1024)
+                        if receiver_response == "":
+                            response = self.removePlayer(turn)
+                        else:
+                            response = pickle.loads(receiver_response)
                         
                 self.players[turn].made_move_this_turn = True
             else:
@@ -164,8 +171,11 @@ class Dealer(object):
                         response = pickle.loads(pickle.dumps({"id" : 4, "move" : move}))#For consistency
                     else:
                         self.players[turn].recv_socket.send(pickle.dumps({"id" : 3, "board" : self.board, "hand" : self.players[turn].hand, "chips" : self.players[turn].chips, "chips_in_pot" : self.players[turn].chips_in_pot, "curr_bet" : toPay - self.players[turn].chips_in_pot_this_turn, "pot" : self.TotalPot()}))
-                        response = pickle.loads(self.players[turn].recv_socket.recv(1024))
-
+                        receiver_response = self.players[turn].recv_socket.recv(1024)
+                        if receiver_response == "":
+                            response = self.removePlayer(turn)
+                        else:
+                            response = pickle.loads(receiver_response)
                 else:
                     roundOver = True  #If player has already moved, but has nothing to bet
                                            #Then the round is neccesarily over
@@ -201,6 +211,8 @@ class Dealer(object):
                     else:
                         self.players[turn].recv_socket.send(pickle.dumps({"id" : 6}))
                         response = pickle.loads(self.players[turn].recv_socket.recv(1024))
+                        if response == "":
+                            response = self.removePlayer(turn)
                                                     
             self.MoveOutput(turn, response["move"])
             response["move"]='NA'
@@ -264,18 +276,3 @@ class Dealer(object):
             return True
         else:
             return False
-    
-    #Simulates an entire game. No longer being used. Game is controled from Player class
-    #def dealGame(self):
-#        gameOver = False
-#        while not(gameOver):
-#            #Add Players
-#            self.dealer_token = (self.dealer_token+1)%len(self.players)
-#            self.DealHand()
-#            gameOver = self.isGameOver()
-
-#dealer = Dealer()
-#dealer.AddPlayer(Player.Player('sean'))
-#dealer.AddPlayer(Player.Player('bob'))
-#dealer.AddPlayer(Player.Player('tim'))
-#dealer.dealGame()
