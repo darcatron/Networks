@@ -96,13 +96,15 @@ class Dealer(object):
         else:
             #Edge Case. Not accounted for in messages
             self.SendMessageToAll(-1, pickle.dumps({"id" : 5, "print" : self.players[winners[0]].username + " wins with " + class_string}))
-            
-    def removePlayer(self, turn):
-        self.num_disconnect += 1
+
+    def update(self):
         for p in self.players:
             if p.is_dealer:
                 p.update_server(len(self.players-num_disconnect))
-
+            
+    def removePlayer(self, turn):
+        self.num_disconnect += 1
+        self.update()
         return pickle.loads(pickle.dumps({"id" : 4, "move" : "F"}))
 
     def MoveOutput(self, turn, move):
@@ -226,7 +228,7 @@ class Dealer(object):
             
         for p in self.players:
             p.chips_in_pot_this_turn = 0
-            
+        
         if self.LastFolded():
             return True
         else:
@@ -268,6 +270,7 @@ class Dealer(object):
         else:
             self.RankedVictory()
 
+        self.update()
         self.ResetHands()
         return
 
