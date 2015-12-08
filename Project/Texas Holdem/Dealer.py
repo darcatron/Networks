@@ -123,11 +123,11 @@ class Dealer(object):
         elif move[0] == 'B':
             self.SendMessageToAll(turn, pickle.dumps({"id" : 1, "print" : self.players[turn].username + " bet " + move[2:]}))
 
-"""     NOTE: The following code is extremely messy
-        The purpose of this function is basically to mitigate a single round
-        of betting. It sends move queries to players, and then receives and acts
-        on their responses.
- """           
+#     NOTE: The following code is extremely messy
+#        The purpose of this function is basically to mitigate a single round
+#        of betting. It sends move queries to players, and then receives and acts
+#        on their responses.
+
     def Bets(self,startingPlayer, startingAmount):
         turn = startingPlayer
         toPay = startingAmount
