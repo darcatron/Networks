@@ -32,7 +32,8 @@ class Player(object):
         self.backup_peer = None # TODO
         self.recv_socket = None #For dealer, this is socket to send to this player
         self.server_host = None # Poker server
-        self.server_port = None 
+        self.server_port = None
+        self.disconnected = False
 
         # game info
         self.dealer_token = 0
@@ -145,7 +146,13 @@ class Player(object):
                     print "The hand has started."
                     id_num = 0
                     while(id_num != 5): #PLAYER CODE
-                        msg = pickle.loads(self.main_peer.recv(1024))
+                        msg = self.main_peer.recv(1024)
+                        if msg = "":
+                            self.update_server()
+                            print "The host has gone offline. Please reconnect at a new table."
+                            return
+                        else:
+                            msg = pickle.loads(msg)
                         id_num = msg["id"]
                         if id_num == 1: #Print
                             print msg["print"]

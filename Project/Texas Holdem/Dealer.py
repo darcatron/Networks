@@ -20,6 +20,7 @@ class Dealer(object):
         self.total_pot = 0
         self.board = None
         self.dealer_token = 0
+        self.num_disconnect = 0
     
     def AddPlayers(self, playerL):#Not right
         self.players = playerL
@@ -97,7 +98,11 @@ class Dealer(object):
             self.SendMessageToAll(-1, pickle.dumps({"id" : 5, "print" : self.players[winners[0]].username + " wins with " + class_string}))
             
     def removePlayer(self, turn):
-        self.players[turn].disconnected = True
+        self.num_disconnect += 1
+        for p in self.players:
+            if p.is_dealer:
+                p.update_server(len(self.players-num_disconnect))
+
         return pickle.loads(pickle.dumps({"id" : 4, "move" : "F"}))
 
     def MoveOutput(self, turn, move):
