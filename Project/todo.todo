@@ -1,18 +1,39 @@
- Necessary Info:
-   what happens if everyone disconnects and
-     no one comes back
-     1 person comes back
-     a few people come back
-     everyone comes back
 todo:
-   -have a way to mimick a "server failure"
+   -cash out, buy
+
    -If the main peer D/Cs, the server should know and remove the table from the database and the other peers should automatically D/C from the main peer and be told of the D/C (host down).
      -each peer will let the server know that the host is down so that in case one or more hosts go down, the server is still likely to get a notification from someone
-     -if the entire game goes down, then the server has no way of knowing
-       -POTENTIAL FIXES - server attempts to connect to host before sending table information to a player who is trying to find a game
+     -if the entire game goes down/ends, then the server has no way of knowing since no one can enter (full table) and no one would tell the server that peers disconnected
+       -POTENTIAL FIXES - server does cleanup every once in a while of full tables
+   
    -If a peer D/Cs, the main peer should know and should take it as a “fold”. Once the round is over, the main peer will update_server() with the correct number of players and should remove the D/C’d player from players_list
+   
    -write extensive readme
-   -if too many players at table, refuse connections from new sockets
+     -server handles table changes (peer d/c from main peer, main peer d/c from peers, only main peer d/c)
+
+   -have a way to mimick a "server failure"
+
 issue:
    server remembers old table even if peer d/c
    poker prints out "Waiting on ___'s turn" twice
+
+README:
+  Overiew:
+    We developed a peer to peer poker game. Users will be able to connect to a server and join a peer hosted poker table of up to 5 players.
+  Functionality:
+    -Server recognizes new users and keeps track of old user's info
+    -Server is able to find open tables for players
+    -Server allows users to "cash out" and return their chips for dollars (dollars aren't tracked)
+    -Server allows users to "buy chips" and use dollars to get more chips (dollars aren't tracked)
+    -Server uses update protocol to keep track of tables
+      -Main peer updates server each round on the number of players in the table and the number of chips each player has 
+      -If main peer disconnects, each peer updates server of disconnection and server removes table from its database. This is in case more than one peer disconnects, the server is going to get the alert from someone.
+      -If peer disconnects, main peer treats it as a "fold" move for the round and removes the player from its data (server is updated about the empty seat at the end of the round)
+      -If the table is not full, and everyone at the table disconnects at the same time then the server will learn about this when a new user attempts to connect to this table. If a new user cannot connect to a table host, the server will remove that table from its database and 
+      
+  Testing it out:
+    -refer to test_server.py, test_player1.py, and test_player2.py
+    -Users create a new Player class with their username
+    -Players can then run Player.find_game(port_num, server_name) with a port number and server name 
+  Limitations:
+    -If the entire game goes down (all people in the table disconnect), then the server has no way of knowing since no one can enter (full table) and no one would tell the server that peers disconnected.    

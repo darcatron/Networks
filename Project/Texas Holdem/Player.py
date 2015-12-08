@@ -114,7 +114,8 @@ class Player(object):
             # TODO: find a way to check if player has d/c from game within Dealer
             #       if d/c send a lower value for update_server(num_players)
             #       then remove player from players_list
-            self.update_server(len(self.players_list))
+            # self.update_server(len(self.players_list))
+            self.check_if_user_wants_to_buy()
             if self.is_dealer and len(self.players_list) < Player.MAXPLAYERS:
                 # check for new player
                 if self not in self.players_list: #NEW LINES
@@ -203,26 +204,7 @@ class Player(object):
         else:
             req_data["type"] = "game_down"
 
-        # connect to poker server
-        client_socket = socket.socket()
-        client_socket.connect((self.server_host, self.server_port))
-        # send notification that sending will start
-        data_to_send = {"data_size_to_send" : len(pickle.dumps(req_data))}
-        client_socket.send(pickle.dumps(data_to_send))
-        # recieve ack
-        ack = client_socket.recv(1024)
-        sys.stderr.write("ack recieved: " + str(pickle.loads(ack)) + "\n")
-        # send game data
-        req_data = pickle.dumps(req_data)
-        totalsent = 0
-
-        while totalsent < data_to_send["data_size_to_send"]:
-            sent = client_socket.send(req_data[totalsent:])
-            sys.stderr.write("sent " + str(sent) + " bytes to socket " + str(client_socket) + "\n\n")
-            if sent == 0:
-                raise RuntimeError("socket connection broken")
-            totalsent += sent
-        sys.stderr.write("sent status update" + "\n")
+        self.send_data_to_server(req_data)
     @staticmethod
     def get_data(connected_socket, num_bytes_to_receive):
         chunks = []
@@ -239,6 +221,45 @@ class Player(object):
             sys.stderr.write("recieved bytes: " + str(bytes_recvd) + "\n\n")
 
         return pickle.loads(''.join(chunks))
+    def send_data_to_server(self, req_data):
+        # connect to poker server
+        client_socket = socket.socket()
+        client_socket.connect((self.server_host, self.server_port))
+        # send notification that sending will start
+        data_to_send = {"data_size_to_send" : len(pickle.dumps(req_data))}
+        client_socket.send(pickle.dumps(data_to_send))
+        # recieve ack
+        ack = client_socket.recv(1024)
+        sys.stderr.write("ack recieved: " + str(pickle.loads(ack)) + "\n")
+        # send data
+        req_data = pickle.dumps(req_data)
+        totalsent = 0
+
+        while totalsent < data_to_send["data_size_to_send"]:
+            sent = client_socket.send(req_data[totalsent:])
+            sys.stderr.write("sent " + str(sent) + " bytes to socket " + str(client_socket) + "\n\n")
+            if sent == 0:
+                raise RuntimeError("socket connection broken")
+            totalsent += sent
+    def check_if_user_wants_to_buy(self):
+        amount = int(raw_input("Please enter the integer amount of chips you would like to purchase or enter 0 for no purchase: "))
+        self.buy_chips(amount)
+    def buy_chips(self, amount):
+        # create req for amount of chips
+        req_data = {"type" : "buy",
+                    "username" : self.username,
+                    "amount" : amount}
+        self.send_data_to_server(req_data)
+        # print "Thank you. Your current balance is $" + self.chips
+    def cash_out(self, amount):
+        if amount > self.chips:
+            print "Nice try, but you only have " + self.chips + ". You cannot cash out more than this."
+        else:
+            req_data = {"type" : "cash",
+                        "username" : self.username,
+                        "amount" : amount}
+            self.send_data_to_server(req_data)
+            print "$" + amount + " has been deposited into your bank account!"
 
 #pList = []
 #p = Player('Sean')

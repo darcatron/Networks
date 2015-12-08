@@ -109,11 +109,11 @@ class Server(object):
                 
             self.send_data(client_socket, table_data)
         elif client_req["type"] == "cash":
-            # TODO
             sys.stderr.write('Got cash out request from ' + client_req["username"] + "\n\n")
+            self.cash_out(client_req["username"], client_req["amount"])
         elif client_req["type"] == "buy":
-            # TODO
             sys.stderr.write('Got buy chips request from ' + client_req["username"] + "\n\n")
+            self.buy_chips(client_req["username"], client_req["amount"])
         elif client_req["type"] == "game_update":
             sys.stderr.write("Got update req from " + str(client_req["host"]) + "\n\n")
             self.update_info(client_req)
@@ -195,10 +195,8 @@ class Server(object):
 
         self.users.append(new_user)
         return new_user
-    def cash_out(self, username):
-        # TODO: print the value they earned and remove their user information
-        # self.update_chips(username, 0)
-        pass
+    def cash_out(self, username, amount):
+        self.update_chips(username, self.get_num_chips(username) - amount)
     def buy_chips(self, username, amount):
         self.update_chips(username, amount)
     def update_chips(self, username, new_num_chips):
