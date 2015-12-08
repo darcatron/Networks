@@ -77,26 +77,20 @@ class Player(object):
         client_socket.send(pickle.dumps(data_to_send))
         # recieve ack
         ack = client_socket.recv(1024)
-        sys.stderr.write("ack recieved: " + str(pickle.loads(ack)) + "\n")
         # send req for game
         client_socket.send(pickle.dumps(req_data))
-        sys.stderr.write("sent req for game" + "\n")
         # recv notification that sending will start
         recv_info = pickle.loads(client_socket.recv(1024))
-        sys.stderr.write("recvd notification for game info sending" + "\n")
         # send ack
         ack_data = {"data_size_to_receive" : recv_info["data_size_to_send"]}
         client_socket.send(pickle.dumps(ack_data))
-        sys.stderr.write("sent ack" + "\n")
         # recv game data
         game_data = self.get_data(client_socket, recv_info["data_size_to_send"])
         self.chips = game_data["num_chips"] # reload chips
         self.table_host = game_data["host"] # set table host
-        sys.stderr.write("got game data" + "\n")
         
         if game_data["new_table"]:
             # player is "server", start "sever" for peers
-            sys.stderr.write("starting peer server" + "\n")
             self.start_server(game_data["port"])
         else:
             # connect to peer
@@ -106,12 +100,11 @@ class Player(object):
                 self.main_peer.send(pickle.dumps({"username" : self.username, "num_chips" : self.chips}))
                 self.play_game()
             except:
-                sys.stderr.write("could not connect to table!" + "\n\n")
                 self.update_server()
                 self.find_game(server_port, host)
     def play_game(self):
-        print "Waiting to join game"
         self.check_if_user_wants_to_buy()    
+        print "Please wait..."
 
         while(True):
             if self.is_dealer and len(self.players_list) < Player.MAXPLAYERS:
@@ -121,10 +114,8 @@ class Player(object):
                 read_ready, _dummy, _dummy = select([self.main_peer], [], [], Player.timeout)
                 if read_ready:
                     client, addr = self.main_peer.accept() # Establish connection with new client
-                    sys.stderr.write('Got connection from: ' + str(addr) + str(client) + "\n\n")
                     # get username and starting chip value from new player
                     client_data = pickle.loads(client.recv(1024))
-                    sys.stderr.write("recvd req: " + str(client_data) + "\n\n")
                     
                     p = Player(client_data["username"])
                     p.recv_socket = client
@@ -134,7 +125,6 @@ class Player(object):
             #Playing round
             if (not self.is_dealer) or (self.is_dealer and len(self.players_list) > 1):
 
-                #sys.stderr.write("Length is long enough" + "\n\n")
                 if self.is_dealer: #DEALER CODE
                     d = Dealer.Dealer()
                     d.AddPlayers(self.players_list)
@@ -212,16 +202,13 @@ class Player(object):
     def get_data(connected_socket, num_bytes_to_receive):
         chunks = []
         bytes_recvd = 0
-        sys.stderr.write("in get_data" + "\n\n")
         while bytes_recvd < num_bytes_to_receive:
             chunk = connected_socket.recv(min(num_bytes_to_receive - bytes_recvd, 2048))
-            sys.stderr.write("recvd data: " + str(pickle.loads(chunk)) + "\n")
             if chunk == '':
                 # TODO: handle err
                 raise RuntimeError("socket connection broken")
             chunks.append(chunk)
             bytes_recvd += len(chunk)
-            sys.stderr.write("recieved bytes: " + str(bytes_recvd) + "\n\n")
 
         return pickle.loads(''.join(chunks))
     def send_data_to_server(self, req_data):
@@ -233,19 +220,16 @@ class Player(object):
         client_socket.send(pickle.dumps(data_to_send))
         # recieve ack
         ack = client_socket.recv(1024)
-        sys.stderr.write("ack recieved: " + str(pickle.loads(ack)) + "\n")
         # send data
         req_data = pickle.dumps(req_data)
         totalsent = 0
 
         while totalsent < data_to_send["data_size_to_send"]:
             sent = client_socket.send(req_data[totalsent:])
-            sys.stderr.write("sent " + str(sent) + " bytes to socket " + str(client_socket) + "\n\n")
             if sent == 0:
                 raise RuntimeError("socket connection broken")
             totalsent += sent
     def check_if_user_wants_to_buy(self):
-        sys.stderr.write("current chip value: " + str(self.chips) + "\n\n")
         amount = int(raw_input("Please enter the integer amount of chips you would like to purchase or enter 0 for no purchase: "))
         self.buy_chips(amount)
     def buy_chips(self, amount):

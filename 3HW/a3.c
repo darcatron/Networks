@@ -79,7 +79,7 @@ int get_filesize(FILE *fp) {
 int send_pkts(FILE *fp, int last_sent, int window_max, int sockfd, int* clientlen, struct sockaddr_in* clientaddr) {
   int final_seq_num = (get_filesize(fp) / DATASIZE); // this accounts for 0 byte DataPkt for file_size % 512 == 0
   int final_pkt_size = (get_filesize(fp) % DATASIZE);
-
+  printf("in send_pkts with last_sent %d and window_max %d\n", last_sent, window_max);
   while (last_sent != window_max) {
     int n;
     DataPkt pkt;

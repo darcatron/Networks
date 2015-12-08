@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
     req.type = RRQ;
     // sprintf(req.window_size, "%d", 2);
     req.window_size = 1;
-    strcpy(req.filename, "test1024");
+    strcpy(req.filename, "test1024.txt");
     printf("req created => type: %d window_size: %d filename: %s\n", req.type, req.window_size, req.filename);
 
     /* send the message to the server */

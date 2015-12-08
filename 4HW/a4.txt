@@ -1,17 +1,278 @@
+Mathurshan Vimalesvaran
 
-Pinging mit.edu [69.192.206.184] with 56 bytes of data:
-Reply from 69.192.206.184: bytes=56 time=72ms TTL=57
-Reply from 69.192.206.184: bytes=56 time=73ms TTL=57
-Reply from 69.192.206.184: bytes=56 time=87ms TTL=57
-Reply from 69.192.206.184: bytes=56 time=72ms TTL=57
-Reply from 69.192.206.184: bytes=56 time=72ms TTL=57
-Reply from 69.192.206.184: bytes=56 time=83ms TTL=57
-Reply from 69.192.206.184: bytes=56 time=74ms TTL=57
-Reply from 69.192.206.184: bytes=56 time=72ms TTL=57
-Reply from 69.192.206.184: bytes=56 time=72ms TTL=57
-Reply from 69.192.206.184: bytes=56 time=72ms TTL=57
+1a)
+    PING mit.edu (23.14.144.128) 56(84) bytes of data.
+    64 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=1 ttl=54 time=7.96 ms
+    64 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=2 ttl=54 time=7.86 ms
+    64 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=3 ttl=54 time=7.89 ms
+    64 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=4 ttl=54 time=7.89 ms
+    64 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=5 ttl=54 time=7.91 ms
+    64 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=6 ttl=54 time=7.94 ms
+    64 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=7 ttl=54 time=7.90 ms
+    64 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=8 ttl=54 time=7.86 ms
+    64 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=9 ttl=54 time=9.65 ms
+    64 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=10 ttl=54 time=7.95 ms
 
-Ping statistics for 69.192.206.184:
-    Packets: Sent = 10, Received = 10, Lost = 0 (0% loss),
-Approximate round trip times in milli-seconds:
-    Minimum = 72ms, Maximum = 87ms, Average = 74ms
+    --- mit.edu ping statistics ---
+    10 packets transmitted, 10 received, 0% packet loss, time 9022ms
+    rtt min/avg/max/mdev = 7.866/8.086/9.654/0.525 ms
+
+1b)
+    PING mit.edu (23.14.144.128) 1000(1028) bytes of data.
+    1008 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=1 ttl=54 time=8.08 ms
+    1008 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=2 ttl=54 time=8.00 ms
+    1008 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=3 ttl=54 time=8.41 ms
+    1008 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=4 ttl=54 time=9.89 ms
+    1008 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=5 ttl=54 time=8.24 ms
+    1008 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=6 ttl=54 time=8.31 ms
+    1008 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=7 ttl=54 time=8.27 ms
+    1008 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=8 ttl=54 time=8.17 ms
+    1008 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=9 ttl=54 time=8.16 ms
+    1008 bytes from a23-14-144-128.deploy.static.akamaitechnologies.com (23.14.144.128): icmp_seq=10 ttl=54 time=8.35 ms
+
+    --- mit.edu ping statistics ---
+    10 packets transmitted, 10 received, 0% packet loss, time 9019ms
+    rtt min/avg/max/mdev = 8.002/8.391/9.892/0.521 ms
+
+RTT varies with packet size. As larger packets are sent over the network, it will take more time to reach the destination as there are more packets since fragmentation will likely occur.
+
+1c) 
+    Tufts and MIT are 3.39 miles apart (air distance) => 5455.676 meters. Light travels at 299,792,458 meters/second.
+    So the packet would need to travel at a time of at most (5455.676 m / 299,792,458 m/s) = 0.00001819817 seconds => .0182 ms for the packet to travel at the speed of light. This speed is much lower than the min RRT so Sana could not send packets faster than the speed of light to MIT. 
+
+2a) 
+    same continent:
+    www.net.princeton.edu to www.tufts.edu 
+    tracing path from www.net.princeton.edu to 130.64.212.28...
+
+    --6PM--
+
+    traceroute to 130.64.212.28 (130.64.212.28), 30 hops max, 40 byte packets
+     1  core-87-router (128.112.128.2)  0.730 ms  0.567 ms  0.576 ms
+     2  border-87-router (128.112.12.142)  0.391 ms  0.342 ms  0.343 ms
+     3  local1.princeton.magpi.net (216.27.98.113)  2.465 ms  84.887 ms  96.958 ms
+     4  216.27.100.6 (216.27.100.6)  116.859 ms  93.101 ms  68.348 ms
+     5  nox300gw1-vl-110-nox-i2.nox.org (192.5.89.221)  126.380 ms  112.306 ms  115.197 ms
+     6  192.5.89.22 (192.5.89.22)  204.240 ms  189.388 ms  123.907 ms
+     7  nox1sumgw1-peer-nox-tufts-207-210-143-70.nox.org (207.210.143.70)  38.592 ms  79.357 ms  87.234 ms
+     8  mky-core-sec-x-border-sec.net.tufts.edu (130.64.4.9)  43.027 ms  37.743 ms  39.814 ms
+     9  mky-n7k-02-x-mky-asr9k-01.net.tufts.edu (130.64.4.202)  151.090 ms  149.987 ms mky-n7k-01-x-mky-asr9k-02.net.tufts.edu (130.64.4.198)  95.576 ms
+    10  * * *
+    11  * * *
+    12  * * *
+    13  * * *
+    14  * * *
+    15  * * *
+    16  * * *
+    17  * * *
+    18  * * *
+    19  * * *
+    20  * * *
+    21  * * *
+    22  * * *
+    23  * * *
+    24  * * *
+    25  * * *
+    26  * * *
+    27  * * *
+    28  * * *
+    29  * * *
+    30  * * *
+    Done.
+
+    --7PM--
+
+    traceroute to 130.64.212.28 (130.64.212.28), 30 hops max, 40 byte packets
+    1  core-87-router (128.112.128.2)  0.727 ms  0.841 ms  0.507 ms
+    2  border-87-router (128.112.12.142)  0.425 ms  0.361 ms  0.334 ms
+    3  local1.princeton.magpi.net (216.27.98.113)  3.484 ms  3.921 ms  75.333 ms
+    4  216.27.100.6 (216.27.100.6)  110.544 ms  33.347 ms  75.085 ms
+    5  nox300gw1-vl-110-nox-i2.nox.org (192.5.89.221)  106.953 ms  85.589 ms  101.965 ms
+    6  192.5.89.22 (192.5.89.22)  70.128 ms  65.662 ms  64.047 ms
+    7  nox1sumgw1-peer-nox-tufts-207-210-143-70.nox.org (207.210.143.70)  52.275 ms  37.941 ms  38.860 ms
+    8  mky-core-sec-x-border-sec.net.tufts.edu (130.64.4.9)  40.483 ms  61.179 ms  37.164 ms
+    9  mky-n7k-02-x-mky-asr9k-01.net.tufts.edu (130.64.4.202)  94.722 ms  81.202 ms mky-n7k-01-x-mky-asr9k-02.net.tufts.edu (130.64.4.198)  38.192 ms
+    10  * * *
+    11  * * *
+    12  * * *
+    13  * * *
+    14  * * *
+    15  * * *
+    16  * * *
+    17  * * *
+    18  * * *
+    19  * * *
+    20  * * *
+    21  * * *
+    22  * * *
+    23  * * *
+    24  * * *
+    25  * * *
+    26  * * *
+    27  * * *
+    28  * * *
+    29  * * *
+    30  * * *
+    Done.
+
+    --8:30PM--
+    
+    traceroute to 130.64.212.28 (130.64.212.28), 30 hops max, 40 byte packets
+    1  core-87-router (128.112.128.2)  0.828 ms  0.758 ms  0.450 ms
+    2  border-87-router (128.112.12.142)  0.374 ms  0.380 ms  0.434 ms
+    3  local1.princeton.magpi.net (216.27.98.113)  144.976 ms  7.408 ms  5.605 ms
+    4  216.27.100.6 (216.27.100.6)  202.298 ms  178.933 ms  35.986 ms
+    5  nox300gw1-vl-110-nox-i2.nox.org (192.5.89.221)  193.006 ms  211.579 ms  224.933 ms
+    6  192.5.89.22 (192.5.89.22)  229.620 ms  83.415 ms  84.552 ms
+    7  nox1sumgw1-peer-nox-tufts-207-210-143-70.nox.org (207.210.143.70)  39.132 ms  41.442 ms  44.257 ms
+    8  mky-core-sec-x-border-sec.net.tufts.edu (130.64.4.9)  38.578 ms  38.750 ms  172.002 ms
+    9  mky-n7k-01-x-mky-asr9k-02.net.tufts.edu (130.64.4.198)  38.331 ms  43.898 ms mky-n7k-02-x-mky-asr9k-01.net.tufts.edu (130.64.4.202)  95.515 ms
+    10  * * *
+    11  * * *
+    12  * * *
+    13  * * *
+    14  * * *
+    15  * * *
+    16  * * *
+    17  * * *
+    18  * * *
+    19  * * *
+    20  * * *
+    21  * * *
+    22  * * *
+    23  * * *
+    24  * * *
+    25  * * *
+    26  * * *
+    27  * * *
+    28  * * *
+    29  * * *
+    30  * * *
+    Done.
+
+    The information shows the nodes the packet took along the network to get to the destination. It also shows the latency of each of 3 packets along the route.
+
+2b) 6PM - 9 routers
+    7PM - 9 routers
+    8:30PM - 9 routers
+    Routers stayed the same
+
+2c) 6PM - 5 ISPs
+    7PM - 5 ISPs
+    8:30PM - 5 ISPs
+
+In your experiment do the largest delays occur at the peering interfaces between adjacent ISPs? It is difficult to come to this conclusion using the experiment data since the delays aren't largely different during the interfaces, but logically it makes sense for the delays to be larger. Since an ISP has a better monetary incentive to fulfill it's own traffic, it will be faster within it's own network and slower to satisfy it's peer ISP.
+
+2a)
+    intercontinental: CTNet Computer Communication Network (AS7670)
+    www.tufts.edu is an alias for lb-webcomm-prod-tss.wc.tufts.edu.
+    lb-webcomm-prod-tss.wc.tufts.edu has address 130.64.212.28
+
+    --6:30PM--
+
+    traceroute:
+     1  [AS4685] hirnij31.asahi-net.or.jp (124.155.65.228)  2.193 ms  2.158 ms  1.906 ms
+     2  [AS4685] hirnirb-ge0.asahi-net.or.jp (124.155.65.254)  2.414 ms  2.350 ms  2.363 ms
+     3  [AS4685] tkybi5-v9.asahi-net.or.jp (124.155.64.1)  24.677 ms  19.469 ms  24.443 ms
+     4  [AS4685] tkyni92.asahi-net.or.jp (202.224.32.92)  20.456 ms  19.302 ms  24.738 ms
+     5  [AS2914] xe-0-2-0-30.r01.tokyjp05.jp.bb.gin.ntt.net (61.120.145.165)  16.267 ms  15.923 ms  16.246 ms
+     6  [AS2914] ae-7.r30.tokyjp05.jp.bb.gin.ntt.net (129.250.7.84)  16.236 ms  15.631 ms  16.277 ms
+     7  [AS2914] ae-4.r20.sttlwa01.us.bb.gin.ntt.net (129.250.2.39)  109.099 ms  108.875 ms  123.821 ms
+     8  [AS2914] ae-1.r05.sttlwa01.us.bb.gin.ntt.net (129.250.5.47)  123.752 ms  108.448 ms  109.542 ms
+     9  [AS2914] ae-0.level3.sttlwa01.us.bb.gin.ntt.net (129.250.8.74)  127.032 ms  127.824 ms  129.316 ms
+    10  [AS3356] ae-7-7.car1.Boston1.Level3.net (4.69.132.241)  197.749 ms  191.943 ms  197.038 ms
+    11  [AS3356] TUFTS-UNIVE.car1.Boston1.Level3.net (4.30.120.126)  182.851 ms  193.290 ms  182.432 ms
+    12  [AS13326] mky-core-sec-x-border-sec.net.tufts.edu (130.64.4.9)  183.665 ms  183.185 ms  195.251 ms
+    13  [AS13326] mky-n7k-01-x-mky-asr9k-02.net.tufts.edu (130.64.4.198)  182.997 ms
+        [AS13326] mky-n7k-02-x-mky-asr9k-01.net.tufts.edu (130.64.4.202)  184.366 ms  182.906 ms
+    14  * * *
+    15  * * *
+    16  * * *
+    17  * * *
+    18  * * *
+    19  * * *
+    20  * * *
+    21  * * *
+    22  * * *
+    23  * * *
+    24  * * *
+    25  * * *
+
+    Completed.
+
+    --7:15PM--
+
+    traceroute:
+    1  [AS4685] hirnij31.asahi-net.or.jp (124.155.65.228)  1.702 ms  1.861 ms  1.968 ms
+    2  [AS4685] hirnirb-ge0.asahi-net.or.jp (124.155.65.254)  2.438 ms  2.547 ms  2.404 ms
+    3  [AS4685] tkybi5-v9.asahi-net.or.jp (124.155.64.1)  17.843 ms  14.992 ms  14.596 ms
+    4  [AS4685] tkyni92.asahi-net.or.jp (202.224.32.92)  21.645 ms  22.476 ms  24.361 ms
+    5  [AS2914] xe-0-2-0-30.r01.tokyjp05.jp.bb.gin.ntt.net (61.120.145.165)  16.551 ms  16.281 ms  15.662 ms
+    6  [AS2914] ae-7.r30.tokyjp05.jp.bb.gin.ntt.net (129.250.7.84)  15.394 ms  15.324 ms  15.984 ms
+    7  [AS2914] ae-4.r20.sttlwa01.us.bb.gin.ntt.net (129.250.2.39)  117.037 ms  110.548 ms  124.132 ms
+    8  [AS2914] ae-1.r05.sttlwa01.us.bb.gin.ntt.net (129.250.5.47)  120.369 ms  120.094 ms  120.300 ms
+    9  [AS2914] ae-0.level3.sttlwa01.us.bb.gin.ntt.net (129.250.8.74)  139.299 ms  127.821 ms  139.726 ms
+    10  [AS3356] ae-7-7.car1.Boston1.Level3.net (4.69.132.241)  192.787 ms  185.086 ms  290.209 ms
+    11  [AS3356] TUFTS-UNIVE.car1.Boston1.Level3.net (4.30.120.126)  194.402 ms  182.504 ms  194.976 ms
+    12  [AS13326] mky-core-sec-x-border-sec.net.tufts.edu (130.64.4.9)  182.997 ms  194.656 ms  196.073 ms
+    13  [AS13326] mky-n7k-01-x-mky-asr9k-02.net.tufts.edu (130.64.4.198)  191.933 ms
+    [AS13326] mky-n7k-02-x-mky-asr9k-01.net.tufts.edu (130.64.4.202)  182.329 ms  184.327 ms
+    14  * * *
+    15  * * *
+    16  * * *
+    17  * * *
+    18  * * *
+    19  * * *
+    20  * * *
+    21  * * *
+    22  * * *
+    23  * * *
+    24  * * *
+    25  * * *
+
+    Completed.
+
+    --8:45PM--
+
+    traceroute:
+     1  [AS4685] hirnij31.asahi-net.or.jp (124.155.65.228)  2.237 ms  2.080 ms  1.984 ms
+     2  [AS4685] hirnirb-ge0.asahi-net.or.jp (124.155.65.254)  12.625 ms  2.697 ms  2.459 ms
+     3  [AS4685] tkybi5-v9.asahi-net.or.jp (124.155.64.1)  14.813 ms  14.874 ms  14.604 ms
+     4  [AS4685] tkyni92.asahi-net.or.jp (202.224.32.92)  15.347 ms  18.691 ms  24.295 ms
+     5  [AS2914] xe-0-2-0-30.r01.tokyjp05.jp.bb.gin.ntt.net (61.120.145.165)  16.260 ms  16.349 ms  16.068 ms
+     6  [AS2914] ae-7.r30.tokyjp05.jp.bb.gin.ntt.net (129.250.7.84)  15.936 ms  17.783 ms  15.950 ms
+     7  [AS2914] ae-4.r20.sttlwa01.us.bb.gin.ntt.net (129.250.2.39)  116.484 ms  122.663 ms  108.590 ms
+     8  [AS2914] ae-1.r05.sttlwa01.us.bb.gin.ntt.net (129.250.5.47)  107.411 ms  108.542 ms  108.134 ms
+     9  [AS2914] ae-0.level3.sttlwa01.us.bb.gin.ntt.net (129.250.8.74)  150.359 ms  150.546 ms  176.816 ms
+    10  [AS3356] ae-7-7.car1.Boston1.Level3.net (4.69.132.241)  184.806 ms  197.499 ms  200.225 ms
+    11  [AS3356] TUFTS-UNIVE.car1.Boston1.Level3.net (4.30.120.126)  181.698 ms  181.518 ms  182.678 ms
+    12  [AS13326] mky-core-sec-x-border-sec.net.tufts.edu (130.64.4.9)  183.496 ms  184.056 ms  184.367 ms
+    13  [AS13326] mky-n7k-02-x-mky-asr9k-01.net.tufts.edu (130.64.4.202)  195.113 ms
+        [AS13326] mky-n7k-01-x-mky-asr9k-02.net.tufts.edu (130.64.4.198)  182.186 ms  185.024 ms
+    14  * * *
+    15  * * *
+    16  * * *
+    17  * * *
+    18  * * *
+    19  * * *
+    20  * * *
+    21  * * *
+    22  * * *
+    23  * * *
+    24  * * *
+    25  * * *
+
+    Completed.
+
+    The information shows the nodes the packet took along the network to get to the destination. It also shows the latency of each of 3 packets along the route.
+
+2b) 6PM - 13 routers
+    7PM - 13 routers
+    8:30PM - 13 routers
+    Routers stayed the same
+
+2c) 6PM - 7 ISPs
+    7PM - 7 ISPs
+    8:30PM - 7 ISPs
+
+The results from the intercontinental trace clearly shows the point at which the packet reaches the other country while the local one has fluctuations in time throughout. It is interesting to see that there is a connection from Seattle, WA to Boston, MA that is utilized for the intercontinental trip.

@@ -27,8 +27,6 @@ class Server(object):
         self.active_sockets.append(server_socket) # Setup sockets to read from 
 
         while True:
-            sys.stderr.write("active_sockets: " + str(self.active_sockets) + "\n\n")
-            sys.stderr.write("socket_infos: " + str(self.socket_infos) + "\n\n")
             read_ready, _dummy, _dummy = select(self.active_sockets, [], [], Server.timeout)
 
             for s in read_ready:
@@ -100,7 +98,6 @@ class Server(object):
             table_data = self.get_open_table(self.get_host(client_socket), client_req["username"])
             sys.stderr.write("table_data returned: " + str(table_data) + "\n")
             if "new_table" not in table_data:
-                sys.stderr.write("added false to table_data" + "\n")
                 table_data["new_table"] = False
             table_data["num_chips"] = self.get_num_chips(client_req["username"])
             sys.stderr.write("updated table_data: " + str(table_data) + "\n\n")
@@ -116,8 +113,8 @@ class Server(object):
         elif client_req["type"] == "game_update":
             sys.stderr.write("Got update req from " + str(client_req["host"]) + "\n\n")
             self.update_info(client_req)
-            sys.stderr.write("new users: " + str(self.users) + "\n\n")
-            sys.stderr.write("new tables: " + str(self.tables) + "\n\n")
+            sys.stderr.write("updated users: " + str(self.users) + "\n\n")
+            sys.stderr.write("updated tables: " + str(self.tables) + "\n\n")
         elif client_req["type"] == "game_down":
             sys.stderr.write("Got game down req on table with host " + str(client_req["host"]) + "\n\n")
             self.remove_table(client_req["host"])
@@ -154,7 +151,6 @@ class Server(object):
 
         while totalsent < data_size_info["data_size_to_send"]:
             sent = client_socket.send(data_to_send[totalsent:])
-            sys.stderr.write("sent " + str(sent) + " bytes to socket " + str(client_socket) + "\n\n")
             if sent == 0:
                 raise RuntimeError("socket connection broken")
             totalsent += sent
