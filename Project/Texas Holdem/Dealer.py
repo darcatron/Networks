@@ -36,13 +36,27 @@ class Dealer(object):
         for p in self.players:
             total += p.chips_in_pot
         return total
+
+    def update(self):
+        for p in self.players:
+            if p.is_dealer:
+                p.update_server(len(self.players)-self.num_disconnect)
+            
+    def removePlayer(self, turn):
+        self.players[turn].disconnected = True
+        self.num_disconnect += 1
+        self.update()
+        return pickle.loads(pickle.dumps({"id" : 4, "move" : "F"}))
     
     def SendMessageToAll(self, turn, msg):
         unpickled = pickle.loads(msg)
         for p in self.players:
             if (self.players.index(p) != turn) and not p.has_folded:
                 if not(p.is_dealer):
-                    p.recv_socket.send(msg)
+                    try:
+                        p.recv_socket.send(msg)
+                    except:
+                        self.removePlayer(self.players.index(p))
                 else:
                     print unpickled["print"]
     
@@ -97,17 +111,6 @@ class Dealer(object):
             #Edge Case. Not accounted for in messages
             self.SendMessageToAll(-1, pickle.dumps({"id" : 5, "print" : self.players[winners[0]].username + " wins with " + class_string}))
 
-    def update(self):
-        for p in self.players:
-            if p.is_dealer:
-                p.update_server(len(self.players)-self.num_disconnect)
-            
-    def removePlayer(self, turn):
-        self.players[turn].disconnected = True
-        self.num_disconnect += 1
-        self.update()
-        return pickle.loads(pickle.dumps({"id" : 4, "move" : "F"}))
-
     def MoveOutput(self, turn, move):
         if move == 'F':
             self.SendMessageToAll(turn, pickle. dumps({"id" : 1, "print" : self.players[turn].username + " folded"}))
@@ -123,6 +126,7 @@ class Dealer(object):
     def Bets(self,startingPlayer, startingAmount):
         turn = startingPlayer
         toPay = startingAmount
+        response = {}
     
         for p in self.players:
             p.made_move_this_turn = False
