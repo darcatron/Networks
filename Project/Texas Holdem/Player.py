@@ -29,7 +29,6 @@ class Player(object):
         self.peers = [] # socket info of other players (used by main_peer)
         self.main_peer = None # socket connection
         self.table_host = None # player who is hosting the table
-        self.backup_peer = None # TODO
         self.recv_socket = None #For dealer, this is socket to send to this player
         self.server_host = None # Poker server
         self.server_port = None
@@ -47,12 +46,12 @@ class Player(object):
         self.__init__(self.username)
     def add_player(self, player):
         self.players_list.append(player)
-    def bet(self, amount): # TODO: NEED TO ADD ERROR CONDITIONS AND ALL IN SPLIT POT
+    def bet(self, amount):
         if amount < self.chips:
             self.chips -= amount
             self.chips_in_pot += amount
             self.chips_in_pot_this_turn += amount
-        elif self.chips <= 0: # TODO: return None?
+        elif self.chips <= 0:
             return None # Stops player from betting more, or remove player from the game
         else:# ALL IN CONDITION
             self.chips_in_pot += self.chips
@@ -64,7 +63,7 @@ class Player(object):
         self.chips_in_pot = 0
         self.chips_in_pot_this_turn = 0
     def find_game(self, server_port, host=None):
-        self.reset()
+        self.reset() # remove data saved from last game
         # connect to poker server
         if host == None:
             host = socket.gethostname()
@@ -115,10 +114,6 @@ class Player(object):
         self.check_if_user_wants_to_buy()    
 
         while(True):
-            # TODO: find a way to check if player has d/c from game within Dealer
-            #       if d/c send a lower value for update_server(num_players)
-            #       then remove player from players_list
-            # self.update_server(len(self.players_list))
             if self.is_dealer and len(self.players_list) < Player.MAXPLAYERS:
                 # check for new player
                 if self not in self.players_list: #NEW LINES
@@ -272,13 +267,3 @@ class Player(object):
             self.chips -= amount
             print "$" + str(amount) + " has been deposited into your bank account!"
             print "You have " + str(self.chips) + " remaining."
-
-#pList = []
-#p = Player('Sean')
-#p.is_dealer=True
-#pList.append(p)
-#pList.append(Player('Bob'))
-#pList.append(Player('Test'))
-#pList.append(Player('Blah'))
-#pList[0].add_players(pList)
-#pList[0].play_game()

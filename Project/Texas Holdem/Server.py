@@ -18,7 +18,6 @@ class Server(object):
         self.active_sockets = [] # sockets to read from
         self.socket_infos = [] # info about each connected client
     def start(self, port):
-        # TODO: add mimic_down on d keystroke
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM) # Create a socket object
         server_socket.setblocking(0) # Non blocking
         host = socket.gethostname() # Get local machine name
