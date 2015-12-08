@@ -147,7 +147,7 @@ class Player(object):
                     id_num = 0
                     while(id_num != 5): #PLAYER CODE
                         msg = self.main_peer.recv(1024)
-                        if msg = "":
+                        if msg == "":
                             self.update_server()
                             print "The host has gone offline. Please reconnect at a new table."
                             return
