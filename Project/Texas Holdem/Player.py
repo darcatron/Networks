@@ -32,17 +32,19 @@ class Player(object):
         self.backup_peer = None # TODO
         self.recv_socket = None #For dealer, this is socket to send to this player
         self.server_host = None # Poker server
-        self.server_port = None 
+        self.server_port = None
+        self.disconnected = False
 
         # game info
         self.dealer_token = 0
         self.hand = None
-        # TODO: fix this so that it's based off what the player says in data
         self.chips = 0
         self.made_move_this_turn = False
         self.has_folded = False
         self.chips_in_pot = 0
         self.chips_in_pot_this_turn = 0
+    def reset(self):
+        self.__init__(self.username)
     def add_player(self, player):
         self.players_list.append(player)
     def bet(self, amount): # TODO: NEED TO ADD ERROR CONDITIONS AND ALL IN SPLIT POT
@@ -62,6 +64,7 @@ class Player(object):
         self.chips_in_pot = 0
         self.chips_in_pot_this_turn = 0
     def find_game(self, server_port, host=None):
+        self.reset()
         # connect to poker server
         if host == None:
             host = socket.gethostname()
@@ -109,13 +112,13 @@ class Player(object):
                 self.find_game(server_port, host)
     def play_game(self):
         print "Waiting to join game"
+        self.check_if_user_wants_to_buy()    
 
         while(True):
             # TODO: find a way to check if player has d/c from game within Dealer
             #       if d/c send a lower value for update_server(num_players)
             #       then remove player from players_list
             # self.update_server(len(self.players_list))
-            self.check_if_user_wants_to_buy()
             if self.is_dealer and len(self.players_list) < Player.MAXPLAYERS:
                 # check for new player
                 if self not in self.players_list: #NEW LINES
@@ -135,7 +138,7 @@ class Player(object):
                 
             #Playing round
             if (not self.is_dealer) or (self.is_dealer and len(self.players_list) > 1):
-                print "The hand has started."
+
                 #sys.stderr.write("Length is long enough" + "\n\n")
                 if self.is_dealer: #DEALER CODE
                     d = Dealer.Dealer()
@@ -143,10 +146,15 @@ class Player(object):
                     self.dealer_token = (self.dealer_token + 1)%len(self.players_list)
                     d.DealHand(self.dealer_token)
                 else:
-                    print "The hand has started."
                     id_num = 0
                     while(id_num != 5): #PLAYER CODE
-                        msg = pickle.loads(self.main_peer.recv(1024))
+                        msg = self.main_peer.recv(1024)
+                        if msg == "":
+                            self.update_server()
+                            print "The host has gone offline. Please reconnect at a new table."
+                            return
+                        else:
+                            msg = pickle.loads(msg)
                         id_num = msg["id"]
                         if id_num == 1: #Print
                             print msg["print"]
@@ -155,7 +163,7 @@ class Player(object):
                                 Card.print_pretty_cards(msg["board"])
                             Card.print_pretty_cards(msg["hand"])
                             print 'Pot size is: %d. You have %d remaining chips' % (msg["pot"], msg["chips"])
-                            move = raw_input('Fold (F), Check (C), or Bet (B-numChips)? ')
+                            move = raw_input('Fold (F), Check (CH), or Bet (B-numChips)? ')
                             self.main_peer.send(pickle.dumps({"id" : 4, "move" : move}))
                         elif id_num == 3: #F,C,R
                             if msg["board"]:
@@ -242,6 +250,7 @@ class Player(object):
                 raise RuntimeError("socket connection broken")
             totalsent += sent
     def check_if_user_wants_to_buy(self):
+        sys.stderr.write("current chip value: " + str(self.chips) + "\n\n")
         amount = int(raw_input("Please enter the integer amount of chips you would like to purchase or enter 0 for no purchase: "))
         self.buy_chips(amount)
     def buy_chips(self, amount):
@@ -250,16 +259,19 @@ class Player(object):
                     "username" : self.username,
                     "amount" : amount}
         self.send_data_to_server(req_data)
-        # print "Thank you. Your current balance is $" + self.chips
+        self.chips += amount
+        print "Thank you. Your current balance is $" + str(self.chips)
     def cash_out(self, amount):
         if amount > self.chips:
-            print "Nice try, but you only have " + self.chips + ". You cannot cash out more than this."
+            print "Nice try, but you only have " + str(self.chips) + ". You cannot cash out more than this."
         else:
             req_data = {"type" : "cash",
                         "username" : self.username,
                         "amount" : amount}
             self.send_data_to_server(req_data)
-            print "$" + amount + " has been deposited into your bank account!"
+            self.chips -= amount
+            print "$" + str(amount) + " has been deposited into your bank account!"
+            print "You have " + str(self.chips) + " remaining."
 
 #pList = []
 #p = Player('Sean')

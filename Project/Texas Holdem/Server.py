@@ -198,7 +198,7 @@ class Server(object):
     def cash_out(self, username, amount):
         self.update_chips(username, self.get_num_chips(username) - amount)
     def buy_chips(self, username, amount):
-        self.update_chips(username, amount)
+        self.update_chips(username, self.get_num_chips(username) + amount)
     def update_chips(self, username, new_num_chips):
         for user in self.users:
             if user["username"] == username:
