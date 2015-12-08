@@ -115,7 +115,7 @@ class Player(object):
             # TODO: find a way to check if player has d/c from game within Dealer
             #       if d/c send a lower value for update_server(num_players)
             #       then remove player from players_list
-            self.update_server(len(self.players_list))
+            #self.update_server(len(self.players_list))
             if self.is_dealer and len(self.players_list) < Player.MAXPLAYERS:
                 # check for new player
                 if self not in self.players_list: #NEW LINES
@@ -135,7 +135,7 @@ class Player(object):
                 
             #Playing round
             if (not self.is_dealer) or (self.is_dealer and len(self.players_list) > 1):
-                print "The hand has started."
+
                 #sys.stderr.write("Length is long enough" + "\n\n")
                 if self.is_dealer: #DEALER CODE
                     d = Dealer.Dealer()
@@ -143,7 +143,6 @@ class Player(object):
                     self.dealer_token = (self.dealer_token + 1)%len(self.players_list)
                     d.DealHand(self.dealer_token)
                 else:
-                    print "The hand has started."
                     id_num = 0
                     while(id_num != 5): #PLAYER CODE
                         msg = self.main_peer.recv(1024)
@@ -161,7 +160,7 @@ class Player(object):
                                 Card.print_pretty_cards(msg["board"])
                             Card.print_pretty_cards(msg["hand"])
                             print 'Pot size is: %d. You have %d remaining chips' % (msg["pot"], msg["chips"])
-                            move = raw_input('Fold (F), Check (C), or Bet (B-numChips)? ')
+                            move = raw_input('Fold (F), Check (CH), or Bet (B-numChips)? ')
                             self.main_peer.send(pickle.dumps({"id" : 4, "move" : move}))
                         elif id_num == 3: #F,C,R
                             if msg["board"]:
