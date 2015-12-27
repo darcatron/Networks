@@ -62,13 +62,14 @@ FILE* open_file(char* filename) {
 }
 
 /*
- * Returns file size
+ * Returns file size of a newly created file pointer
+ * NOTE: file pointers in use will not work correctly!
  */
 int get_filesize(FILE *fp) {
   fseek(fp, 0, SEEK_END);
   int file_size = ftell(fp);
   fseek(fp, 0, SEEK_SET);
-  
+  // printf("get_filesize()'s file_size is %d\n", file_size);
   return file_size;
 }
 
@@ -76,13 +77,14 @@ int get_filesize(FILE *fp) {
  * Sends packets up to and including window_max
  * Returns last sent packet
  */
-int send_pkts(FILE *fp, int last_sent, int window_max, int sockfd, int* clientlen, struct sockaddr_in* clientaddr) {
-  int final_seq_num = (get_filesize(fp) / DATASIZE); // this accounts for 0 byte DataPkt for file_size % 512 == 0
-  int final_pkt_size = (get_filesize(fp) % DATASIZE);
-  printf("in send_pkts with last_sent %d and window_max %d\n", last_sent, window_max);
+int send_pkts(FILE *fp, int file_size, int last_sent, int window_max, int sockfd, int* clientlen, struct sockaddr_in* clientaddr) {
+  int final_seq_num = (file_size / DATASIZE); // this accounts for 0 byte DataPkt for file_size % 512 == 0
+  int final_pkt_size = (file_size % DATASIZE);
+
   while (last_sent != window_max) {
     int n;
     DataPkt pkt;
+    // printf("just sent %d window_max is %d\n", last_sent, window_max);
 
     pkt.type = DATA;
     pkt.seq_num = ++last_sent;
@@ -92,7 +94,7 @@ int send_pkts(FILE *fp, int last_sent, int window_max, int sockfd, int* clientle
     int send_size = (pkt.seq_num == final_seq_num) ? ((TYPEWINDOWSEQSIZE * 2) + final_pkt_size) : sizeof(DataPkt);
     n = sendto(sockfd, (char *) &pkt, send_size, 0, 
                (struct sockaddr *) clientaddr, *clientlen);
-    printf("sending pkt seq num: %d\n", pkt.seq_num);
+    // printf("sending pkt seq num: %d\n", pkt.seq_num);
     if (n < 0) 
       error("ERROR in sendto");
   }
@@ -113,7 +115,8 @@ void send_err(int sockfd, int* clientlen, struct sockaddr_in* clientaddr) {
 void send_file(int sockfd, int* clientlen, struct sockaddr_in* clientaddr, Request* req) {
   int last_sent = -1;
   FILE *fp = open_file(req->filename);
-  int final_seq_num = (get_filesize(fp) / DATASIZE); // this accounts for 0 byte DataPkt for file_size % 512 == 0
+  int file_size = get_filesize(fp);
+  int final_seq_num = (file_size / DATASIZE); // this accounts for 0 byte DataPkt for file_size % 512 == 0
   int window_min = 0;
   // window_max can't be greater than final_seq_num
   int window_max = (req->window_size - 1 > final_seq_num) ? final_seq_num : (req->window_size - 1);
@@ -121,8 +124,10 @@ void send_file(int sockfd, int* clientlen, struct sockaddr_in* clientaddr, Reque
   int n;
   fd_set read_set;
   struct timeval timeout;
-  
-  last_sent = send_pkts(fp, last_sent, window_max, sockfd, clientlen, clientaddr);
+  // printf("data size is %d and final_seq_num is %d\n", file_size, final_seq_num);
+  // printf("window_size is %d and window_max is %d\n", req->window_size, window_max);
+  // printf("about to send pkts\n");
+  last_sent = send_pkts(fp, file_size, last_sent, window_max, sockfd, clientlen, clientaddr);
 
   while (1) {
     DataPkt ack;
@@ -134,27 +139,33 @@ void send_file(int sockfd, int* clientlen, struct sockaddr_in* clientaddr, Reque
     n = select(sockfd + 1, &read_set, NULL, NULL, &timeout);
 
     if (n == 0) { // timed out
+      // printf("timed out %d times\n", num_timeouts);
       num_timeouts++;
 
       if (num_timeouts == MAX_TIMEOUTS) {
         return; // stop communication
       }
-      last_sent = send_pkts(fp, window_min - 1, window_max, sockfd, clientlen, clientaddr);
+      last_sent = send_pkts(fp, file_size, window_min - 1, window_max, sockfd, clientlen, clientaddr);
     }
     else {
       n = recvfrom(sockfd, (char *) &ack, (TYPEWINDOWSEQSIZE * 2), 0,
          (struct sockaddr *) clientaddr, clientlen);
       if (n < 0)
         error("ERROR in recvfrom");
+      // printf("got ack for pkt %d\n", ack.seq_num);
       if (ack.seq_num >= window_min) { // ACK is new
         if (ack.seq_num == final_seq_num) {
+          // printf("TRANSFER DONE!\n");
           return; // completed
         }
 
         // adjust window accordingly
         window_min = ack.seq_num + 1;
         window_max = (window_min + (req->window_size - 1) > final_seq_num) ? final_seq_num : (window_min + (req->window_size - 1));
-        last_sent = send_pkts(fp, last_sent, window_max, sockfd, clientlen, clientaddr);
+        // printf("window_min is now %d and window_max is now %d\n", window_min, window_max);
+        // printf("sending next set of pkts\n");
+        last_sent = send_pkts(fp, file_size, last_sent, window_max, sockfd, clientlen, clientaddr);
+        // printf("last sent %d\n", last_sent);
       }
     }
   }
@@ -231,7 +242,7 @@ int main(int argc, char **argv) {
       continue;
     }
 
-    int completed = 0, too_many_timeouts = -1;
+    // printf("got request for %s\n", req->filename);
     send_file(sockfd, &clientlen, &clientaddr, req); 
     free(req);
   }
